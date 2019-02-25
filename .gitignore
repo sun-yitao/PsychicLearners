@@ -103,5 +103,5 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-#Image Data
-data/image/
+#Data
+data/
