@@ -10,13 +10,13 @@ data_directory = os.path.join(cwd, 'data')
 image_directory = os.path.join(data_directory, 'image')
 output_dir = os.path.join(image_directory, 'original')
 # extract tarfiles in data directory to image directory
-"""
+
 tarfiles = glob(os.path.join(data_directory, '*.tar.gz'))
 for t in tarfiles:
     tf = tarfile.open(t)
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-    tf.extractall(path=output_dir)"""
+    tf.extractall(path=output_dir)
 
 
 # Use StratifiedShuffleSplit to split images and train.csv into training and validation sets
@@ -46,6 +46,7 @@ for i in range(n_categories):
 os.makedirs(os.path.join(image_directory, 'test'), exist_ok=True)
 
 # copy the images to the respective categories, if low on disk space change to shutil.move
+# not well optimised takes forever to run
 print('Copying training images')
 for row in train.itertuples():
     copy(row[5], os.path.join(image_directory, 'v1', 'train', str(row[3])))
@@ -57,8 +58,11 @@ for row in test.itertuples():
     copy(row[4], os.path.join(image_directory, 'test'))
 
 # check that all the images are present without duplicates
-images = glob(os.path.join(image_directory, 'v1', '**', '*.jpg'), recursive=True)
+images = glob(os.path.join(image_directory, 'v1', '**', '*.jpg'), recursive=True) + \
+         glob(os.path.join(image_directory, 'test', '*.jpg'))
 original_images = glob(os.path.join(output_dir, '**', '*.jpg'), recursive=True)
 images = [os.path.split(filename)[-1] for filename in images]
 original_images = [os.path.split(filename)[-1] for filename in original_images]
+print(len(images))
+print(len(original_images))
 assert sorted(images) == sorted(original_images)
