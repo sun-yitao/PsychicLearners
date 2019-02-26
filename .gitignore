@@ -105,3 +105,4 @@ venv.bak/
 
 #Data
 data/
+title_classification/crawl-300d-2M.vec
