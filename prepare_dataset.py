@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from shutil import copy
 
-cwd = os.getcwd()
+cwd = os.getcwd() # this needs to be performed in PsychicLearners root directory
 data_directory = os.path.join(cwd, 'data')
 image_directory = os.path.join(data_directory, 'image')
 output_dir = os.path.join(image_directory, 'original')
