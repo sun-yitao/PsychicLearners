@@ -17,16 +17,39 @@ from keras.preprocessing import text, sequence
 from keras import layers, models, optimizers
 
 from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
+from imblearn.combine import SMOTEENN, SMOTETomek
 from imblearn.pipeline import make_pipeline as make_pipeline_imb
 from imblearn.metrics import classification_report_imbalanced
+
+RANDOM_STATE = 42
 
 # load dataset
 data_directory = os.path.join('..', 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
-train_x, train_y = train[['itemid', 'title', 'image_path']], train['Category']
-valid_x, valid_y = valid[['itemid', 'title', 'image_path']], valid['Category']
+train_x, train_y = train['title'], train['Category']
+valid_x, valid_y = valid['title'], valid['Category']
+samplers = [
+    ['Random_Undersample', RandomUnderSampler(random_state=RANDOM_STATE)],
+    ['ADASYN', ADASYN(random_state=RANDOM_STATE)],
+    ['ROS', RandomOverSampler(random_state=RANDOM_STATE)],
+    ['SMOTE', SMOTE(random_state=RANDOM_STATE)],
+]
 
+
+class DummySampler(object):
+    def sample(self, X, y):
+        return X, y
+
+    def fit(self, X, y):
+        return self
+
+    def fit_resample(self, X, y):
+        return self.sample(X, y)
+
+sampler = DummySampler()
+print(train_x.head(10))
 # label encode the target variable
 encoder = preprocessing.LabelEncoder()
 train_y = encoder.fit_transform(train_y)
@@ -38,25 +61,21 @@ count_vect = CountVectorizer(analyzer='word', strip_accents='unicode',
 count_vect.fit(train['title'])
 
 # transform the training and validation data using count vectorizer object
-xtrain_count = count_vect.transform(train_x)
-xvalid_count = count_vect.transform(valid_x)
 
 # word level tf-idf
 tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode',
                              stop_words='english', token_pattern=r'\w{1,}')
 tfidf_vect.fit(train['title'])
-xtrain_tfidf = tfidf_vect.transform(train_x)
-xvalid_tfidf = tfidf_vect.transform(valid_x)
 
 # ngram level tf-idf
 tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode',
                                    stop_words='english', token_pattern=r'\w{1,}',
-                                   ngram_range=(2, 3))
+                                   ngram_range=(1, 3))
 tfidf_vect_ngram.fit(train['title'])
-xtrain_tfidf_ngram = tfidf_vect_ngram.transform(train_x)
-xvalid_tfidf_ngram = tfidf_vect_ngram.transform(valid_x)
 
+"""
 # load the pre-trained word-embedding vectors
+print('Loading word2vec')
 embeddings_index = {}
 for i, line in enumerate(open('crawl-300d-2M.vec')):
     values = line.split()
@@ -78,18 +97,12 @@ embedding_matrix = np.zeros((len(word_index) + 1, 300))
 for word, i in word_index.items():
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None:
-        embedding_matrix[i] = embedding_vector
+        embedding_matrix[i] = embedding_vector"""
 
-train['char_count'] = train['title'].apply(len)
-train['word_count'] = train['title'].apply(lambda x: len(x.split()))
-train['word_density'] = train['char_count'] / (train['word_count']+1)
-train['punctuation_count'] = train['title'].apply(
-    lambda x: len("".join(_ for _ in x if _ in string.punctuation)))
-train['title_word_count'] = train['title'].apply(
-    lambda x: len([wrd for wrd in x.split() if wrd.istitle()]))
-train['upper_case_word_count'] = train['title'].apply(
-    lambda x: len([wrd for wrd in x.split() if wrd.isupper()]))
-
+#train['char_count'] = train['title'].apply(len)
+#train['word_count'] = train['title'].apply(lambda x: len(x.split()))
+#train['word_density'] = train['char_count'] / (train['word_count']+1)
+"""
 pos_family = {
     'noun': ['NN', 'NNS', 'NNP', 'NNPS'],
     'pron': ['PRP', 'PRP$', 'WP', 'WP$'],
@@ -130,73 +143,79 @@ topic_summaries = []
 for i, topic_dist in enumerate(topic_word):
     topic_words = np.array(vocab)[np.argsort(
         topic_dist)][:-(n_top_words+1):-1]
-    topic_summaries.append(' '.join(topic_words))
+    topic_summaries.append(' '.join(topic_words)) """
 
-def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False):
+def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False, is_xgb=False):
     # fit the training dataset on the classifier
+    if isinstance(classifier, xgboost.XGBClassifier):
+        feature_vector_train = feature_vector_train.to_csc()
+        feature_vector_valid = feature_vector_valid.to_csc()
     classifier.fit(feature_vector_train, label)
-
     # predict the labels on validation dataset
     predictions = classifier.predict(feature_vector_valid)
-
     if is_neural_net:
         predictions = predictions.argmax(axis=-1)
-
     return metrics.accuracy_score(predictions, valid_y)
 
-
+"""
 # Naive Bayes on Count Vectors
-accuracy = train_model(naive_bayes.MultinomialNB(),
-                       xtrain_count, train_y, xvalid_count)
+accuracy = train_model(make_pipeline_imb(count_vect, sampler, naive_bayes.MultinomialNB()),
+                       train_x, train_y, valid_x)
 print("NB, Count Vectors: ", accuracy)
 
 # Naive Bayes on Word Level TF IDF Vectors
-accuracy = train_model(naive_bayes.MultinomialNB(),
-                       xtrain_tfidf, train_y, xvalid_tfidf)
+accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, naive_bayes.MultinomialNB()),
+                       train_x, train_y, valid_x)
 print("NB, WordLevel TF-IDF: ", accuracy)
 
 # Naive Bayes on Ngram Level TF IDF Vectors
-accuracy = train_model(naive_bayes.MultinomialNB(),
-                       xtrain_tfidf_ngram, train_y, xvalid_tfidf_ngram)
+accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, naive_bayes.MultinomialNB()),
+                       train_x, train_y, valid_x)
 print("NB, N-Gram Vectors: ", accuracy)
 
 # Linear Classifier on Count Vectors
-accuracy = train_model(linear_model.LogisticRegression(),
-                       xtrain_count, train_y, xvalid_count)
+accuracy = train_model(make_pipeline_imb(count_vect, sampler, 
+                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                         tol=1e-4, C=1.e4 / 533292)),
+                       train_x, train_y, valid_x)
 print("LR, Count Vectors: ", accuracy)
 
 # Linear Classifier on Word Level TF IDF Vectors
-accuracy = train_model(linear_model.LogisticRegression(),
-                       xtrain_tfidf, train_y, xvalid_tfidf)
+accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, 
+                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                         tol=1e-4, C=1.e4 / 533292)),
+                       train_x, train_y, valid_x)
 print("LR, WordLevel TF-IDF: ", accuracy)
 
 # Linear Classifier on Ngram Level TF IDF Vectors
-accuracy = train_model(linear_model.LogisticRegression(),
-                       xtrain_tfidf_ngram, train_y, xvalid_tfidf_ngram)
-print("LR, N-Gram Vectors: ", accuracy)
+accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, 
+                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                         tol=1e-4, C=1.e4 / 533292)),
+                       train_x, train_y, valid_x)
+print("LR, N-Gram Vectors: ", accuracy)"""
 
-accuracy = train_model(svm.SVC(), xtrain_tfidf_ngram,
-                       train_y, xvalid_tfidf_ngram)
+accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, svm.SVC(tol=.1, max_iter=5000, verbose=True)), 
+                        train_x, train_y, valid_x)
 print("SVM, N-Gram Vectors: ", accuracy)
 
 # RF on Count Vectors
-accuracy = train_model(ensemble.RandomForestClassifier(),
-                       xtrain_count, train_y, xvalid_count)
+accuracy = train_model(make_pipeline_imb(count_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+                       train_x, train_y, valid_x)
 print("RF, Count Vectors: ", accuracy)
 
 # RF on Word Level TF IDF Vectors
-accuracy = train_model(ensemble.RandomForestClassifier(),
-                       xtrain_tfidf, train_y, xvalid_tfidf)
+accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+                       train_x, train_y, valid_x)
 print("RF, WordLevel TF-IDF: ", accuracy)
 
 # Extereme Gradient Boosting on Count Vectors
-accuracy = train_model(xgboost.XGBClassifier(),
-                       xtrain_count.tocsc(), train_y, xvalid_count.tocsc())
+accuracy = train_model(make_pipeline_imb(count_vect, sampler, xgboost.XGBClassifier()),
+                       train_x, train_y, valid_x)
 print("Xgb, Count Vectors: ", accuracy)
 
 # Extereme Gradient Boosting on Word Level TF IDF Vectors
-accuracy = train_model(xgboost.XGBClassifier(),
-                       xtrain_tfidf.tocsc(), train_y, xvalid_tfidf.tocsc())
+accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, xgboost.XGBClassifier()),
+                       train_x, train_y, valid_x)
 print("Xgb, WordLevel TF-IDF: ", accuracy)
 
 """
@@ -217,7 +236,7 @@ def create_model_architecture(input_size):
 
 classifier = create_model_architecture(xtrain_tfidf_ngram.shape[1])
 accuracy = train_model(classifier, xtrain_tfidf_ngram,
-                       train_y, xvalid_tfidf_ngram, is_neural_net=True)
+                       train_y, valid_x, is_neural_net=True)
 
 
 def create_cnn():

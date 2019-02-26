@@ -1,0 +1,3 @@
+Model | Hyperparameters | Dataset Version | Train Accuracy | Validation Accuracy | Test Accuracy 
+Logistic Regression with Tfidf ngrams and non ngrams | NA | train_split.csv | NA | 74.06 | NA 
+Naive Bayes Count Vectors | NA | train_split.csv | NA | 66.63 | NA
