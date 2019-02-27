@@ -1,17 +1,14 @@
 import os
 from os.path import join, split
-import imgaug as ia
-import numpy as np
-from imgaug import augmenters as iaa
 from glob import glob
+import numpy as np
 from PIL import Image
-"""
-This script will augment each image in place, overwriting the original.
-"""
-train_dir = os.path.join(os.getcwd(), 'data', 'image', 'v1')
-train_folders = glob(os.path.join(train_dir, '*'))
-output_dir = os.path.join(os.getcwd(), 'data', 'image', 'v1_balanced')
-num_augments = len(glob(train_dir + '**/*.jpg', recursive=True))*1
+import imgaug as ia
+from imgaug import augmenters as iaa
+
+# This script will augment each image in place, overwriting the original.
+train_dir = join(os.getcwd(), 'data', 'image', 'v1_train_balanced')
+train_folders = glob(join(train_dir, '*'))
 
 # array of paths to image directories to augment
 image_directories = glob('/Users/sunyitao/Documents/XRVision/STE/dataset/v4/train/*')

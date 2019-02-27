@@ -16,21 +16,23 @@ import keras
 from keras.preprocessing import text, sequence
 from keras import layers, models, optimizers
 
+"""
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
 from imblearn.combine import SMOTEENN, SMOTETomek
 from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier, RUSBoostClassifier
-from imblearn.pipeline import make_pipeline as make_pipeline_imb
-from imblearn.metrics import classification_report_imbalanced
+from imblearn.pipeline import make_pipeline as make_pipeline
+from imblearn.metrics import classification_report_imbalanced"""
 
 RANDOM_STATE = 42
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
 data_directory = os.path.join('..', 'data')
-train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
+train = pd.read_csv(os.path.join(data_directory, 'train_split_balanced.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
 train_x, train_y = train['title'], train['Category']
 valid_x, valid_y = valid['title'], valid['Category']
+"""
 samplers = [
     ['Random_Undersample', RandomUnderSampler(random_state=RANDOM_STATE)],
     ['ADASYN', ADASYN(random_state=RANDOM_STATE)],
@@ -40,7 +42,7 @@ samplers = [
 
 
 class DummySampler(object):
-    """Does not perform any sampling"""
+    #Does not perform any sampling
     def sample(self, X, y):
         return X, y
 
@@ -48,9 +50,7 @@ class DummySampler(object):
         return self
 
     def fit_resample(self, X, y):
-        return self.sample(X, y)
-
-sampler = DummySampler() #Change this with any sampler if desired
+        return self.sample(X, y) = DummySampler() #Change this with an if desired"""
 print(train_x.head(10))
 # label encode the target variable
 encoder = preprocessing.LabelEncoder()
@@ -160,98 +160,85 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
     return metrics.accuracy_score(predictions, valid_y)
 
 """
-# Commented out as already tested
 # Naive Bayes on Count Vectors
-accuracy = train_model(make_pipeline_imb(count_vect, sampler, naive_bayes.MultinomialNB()),
+accuracy = train_model(make_pipeline(count_vect, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
 print("NB, Count Vectors: ", accuracy)
 
 # Naive Bayes on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, naive_bayes.MultinomialNB()),
+accuracy = train_model(make_pipeline(tfidf_vect, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
 print("NB, WordLevel TF-IDF: ", accuracy)
 
 # Naive Bayes on Ngram Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, naive_bayes.MultinomialNB()),
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
 print("NB, N-Gram Vectors: ", accuracy)
 
 # Linear Classifier on Count Vectors
-accuracy = train_model(make_pipeline_imb(count_vect, sampler, 
-                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
-                                                                         tol=1e-4, C=1.e4 / 533292)),
+accuracy = train_model(make_pipeline(count_vect,
+                                     linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                     tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
 print("LR, Count Vectors: ", accuracy)
 
 # Linear Classifier on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, 
-                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
-                                                                         tol=1e-4, C=1.e4 / 533292)),
+accuracy = train_model(make_pipeline(tfidf_vect_ngram,
+                                     linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                     tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
 print("LR, WordLevel TF-IDF: ", accuracy)
 
 # Linear Classifier on Ngram Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, 
-                                         linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
-                                                                         tol=1e-4, C=1.e4 / 533292)),
+accuracy = train_model(make_pipeline(tfidf_vect_ngram,
+                                     linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                                                     tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
 print("LR, N-Gram Vectors: ", accuracy)"""
 
-#accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, svm.SVC(tol=.1, max_iter=5000, verbose=True)), 
-#                        train_x, train_y, valid_x)
-#print("SVM, N-Gram Vectors: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.1)), 
+                        train_x, train_y, valid_x)
+print("SVM, N-Gram Vectors: ", accuracy)
 
 # RF on Count Vectors
-"""
-accuracy = train_model(make_pipeline_imb(count_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+
+accuracy = train_model(make_pipeline(count_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
-print("RF, Count Vectors: ", accuracy)
+print("RF 580, Count Vectors: ", accuracy)
 
 # RF on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
-print("RF, WordLevel TF-IDF: ", accuracy)"""
+print("RF 580, WordLevel TF-IDF: ", accuracy)
+
+accuracy = train_model(make_pipeline(count_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*100, min_samples_leaf=10)),
+                       train_x, train_y, valid_x)
+print("RF 5800, Count Vectors: ", accuracy)
+
+# RF on Word Level TF IDF Vectors
+accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*100, min_samples_leaf=10)),
+                       train_x, train_y, valid_x)
+print("RF 5800, WordLevel TF-IDF: ", accuracy)
 
 # Extereme Gradient Boosting on Count Vectors
-accuracy = train_model(make_pipeline_imb(count_vect, sampler, xgboost.XGBClassifier()),
+accuracy = train_model(make_pipeline(count_vect, xgboost.XGBClassifier(max_depth=3, learning_rate=0.1,
+                                                                       n_estimators=100, silent=True,
+                                                                       objective="binary:logistic", booster='gbtree',
+                                                                       n_jobs=6, nthread=None, gamma=0, min_child_weight=1,
+                                                                       max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                                                                       reg_alpha=0, reg_lambda=1)),
                        train_x, train_y, valid_x)
 print("Xgb, Count Vectors: ", accuracy)
 
 # Extereme Gradient Boosting on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, xgboost.XGBClassifier()),
+accuracy = train_model(make_pipeline(tfidf_vect, xgboost.XGBClassifier(max_depth=3, learning_rate=0.1,
+                                                                       n_estimators=100, silent=True,
+                                                                       objective="binary:logistic", booster='gbtree',
+                                                                       n_jobs=6, nthread=None, gamma=0, min_child_weight=1,
+                                                                       max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                                                                       reg_alpha=0, reg_lambda=1)),
                        train_x, train_y, valid_x)
 print("Xgb, WordLevel TF-IDF: ", accuracy)
-
-# Try out imblearn classifiers
-accuracy = train_model(make_pipeline(count_vect, BalancedRandomForestClassifier()),
-                       train_x, train_y, valid_x)
-print("BRF, Count Vectors: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, BalancedRandomForestClassifier()),
-                       train_x, train_y, valid_x)
-print("BRF, WordLevel TF-IDF: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram,BalancedRandomForestClassifier()),
-                       train_x, train_y, valid_x)
-print("BRF, N-Gram Vectors: ", accuracy)
-
-accuracy = train_model(make_pipeline(count_vect, EasyEnsembleClassifier(n_jobs=6)),
-                       train_x, train_y, valid_x)
-print("EEC, Count Vectors: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, EasyEnsembleClassifier(n_jobs=6)),
-                       train_x, train_y, valid_x)
-print("EEC, WordLevel TF-IDF: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, EasyEnsembleClassifier(n_jobs=6)),
-                       train_x, train_y, valid_x)
-print("EEC, N-Gram Vectors: ", accuracy)
-
-accuracy = train_model(make_pipeline(count_vect, RUSBoostClassifier()),
-                       train_x, train_y, valid_x)
-print("RUSB, Count Vectors: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, RUSBoostClassifier()),
-                       train_x, train_y, valid_x)
-print("RUSB, WordLevel TF-IDF: ", accuracy)
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, RUSBoostClassifier()),
-                       train_x, train_y, valid_x)
-print("RUSB, N-Gram Vectors: ", accuracy)
 
 """
 def create_model_architecture(input_size):
