@@ -5,7 +5,9 @@ import numpy as np
 from imgaug import augmenters as iaa
 from glob import glob
 from PIL import Image
-
+"""
+This script will augment each image in place, overwriting the original.
+"""
 train_dir = os.path.join(os.getcwd(), 'data', 'image', 'v1')
 train_folders = glob(os.path.join(train_dir, '*'))
 output_dir = os.path.join(os.getcwd(), 'data', 'image', 'v1_balanced')
