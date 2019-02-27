@@ -24,7 +24,7 @@ from imblearn.pipeline import make_pipeline as make_pipeline_imb
 from imblearn.metrics import classification_report_imbalanced
 
 RANDOM_STATE = 42
-
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
 data_directory = os.path.join('..', 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
@@ -202,6 +202,7 @@ print("LR, N-Gram Vectors: ", accuracy)"""
 #print("SVM, N-Gram Vectors: ", accuracy)
 
 # RF on Count Vectors
+"""
 accuracy = train_model(make_pipeline_imb(count_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
 print("RF, Count Vectors: ", accuracy)
@@ -209,7 +210,7 @@ print("RF, Count Vectors: ", accuracy)
 # RF on Word Level TF IDF Vectors
 accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
-print("RF, WordLevel TF-IDF: ", accuracy)
+print("RF, WordLevel TF-IDF: ", accuracy)"""
 
 # Extereme Gradient Boosting on Count Vectors
 accuracy = train_model(make_pipeline_imb(count_vect, sampler, xgboost.XGBClassifier()),
