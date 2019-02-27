@@ -19,6 +19,7 @@ from keras import layers, models, optimizers
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
 from imblearn.combine import SMOTEENN, SMOTETomek
+from imblearn.ensemble import BalancedRandomForestClassifier, EasyEnsembleClassifier, RUSBoostClassifier
 from imblearn.pipeline import make_pipeline as make_pipeline_imb
 from imblearn.metrics import classification_report_imbalanced
 
@@ -39,6 +40,7 @@ samplers = [
 
 
 class DummySampler(object):
+    """Does not perform any sampling"""
     def sample(self, X, y):
         return X, y
 
@@ -48,7 +50,7 @@ class DummySampler(object):
     def fit_resample(self, X, y):
         return self.sample(X, y)
 
-sampler = DummySampler()
+sampler = DummySampler() #Change this with any sampler if desired
 print(train_x.head(10))
 # label encode the target variable
 encoder = preprocessing.LabelEncoder()
@@ -56,7 +58,7 @@ train_y = encoder.fit_transform(train_y)
 valid_y = encoder.fit_transform(valid_y)
 
 # create a count vectorizer object
-count_vect = CountVectorizer(analyzer='word', strip_accents='unicode',
+count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', #Stop words may not be needed as they seem to be already removed
                              stop_words='english', token_pattern=r'\w{1,}')
 count_vect.fit(train['title'])
 
@@ -77,7 +79,7 @@ tfidf_vect_ngram.fit(train['title'])
 # load the pre-trained word-embedding vectors
 print('Loading word2vec')
 embeddings_index = {}
-for i, line in enumerate(open('crawl-300d-2M.vec')):
+for i, line in enumerate(open('crawl-300d-2M.vec')): #This for loop takes FOREVER to run, need to find a better way to load word2vec
     values = line.split()
     embeddings_index[values[0]] = np.asarray(values[1:], dtype='float32')
 
@@ -145,7 +147,7 @@ for i, topic_dist in enumerate(topic_word):
         topic_dist)][:-(n_top_words+1):-1]
     topic_summaries.append(' '.join(topic_words)) """
 
-def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False, is_xgb=False):
+def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False):
     # fit the training dataset on the classifier
     if isinstance(classifier, xgboost.XGBClassifier):
         feature_vector_train = feature_vector_train.to_csc()
@@ -158,6 +160,7 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
     return metrics.accuracy_score(predictions, valid_y)
 
 """
+# Commented out as already tested
 # Naive Bayes on Count Vectors
 accuracy = train_model(make_pipeline_imb(count_vect, sampler, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
@@ -194,9 +197,9 @@ accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler,
                        train_x, train_y, valid_x)
 print("LR, N-Gram Vectors: ", accuracy)"""
 
-accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, svm.SVC(tol=.1, max_iter=5000, verbose=True)), 
-                        train_x, train_y, valid_x)
-print("SVM, N-Gram Vectors: ", accuracy)
+#accuracy = train_model(make_pipeline_imb(tfidf_vect_ngram, sampler, svm.SVC(tol=.1, max_iter=5000, verbose=True)), 
+#                        train_x, train_y, valid_x)
+#print("SVM, N-Gram Vectors: ", accuracy)
 
 # RF on Count Vectors
 accuracy = train_model(make_pipeline_imb(count_vect, sampler, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
@@ -217,6 +220,37 @@ print("Xgb, Count Vectors: ", accuracy)
 accuracy = train_model(make_pipeline_imb(tfidf_vect, sampler, xgboost.XGBClassifier()),
                        train_x, train_y, valid_x)
 print("Xgb, WordLevel TF-IDF: ", accuracy)
+
+# Try out imblearn classifiers
+accuracy = train_model(make_pipeline(count_vect, BalancedRandomForestClassifier()),
+                       train_x, train_y, valid_x)
+print("BRF, Count Vectors: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, BalancedRandomForestClassifier()),
+                       train_x, train_y, valid_x)
+print("BRF, WordLevel TF-IDF: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram,BalancedRandomForestClassifier()),
+                       train_x, train_y, valid_x)
+print("BRF, N-Gram Vectors: ", accuracy)
+
+accuracy = train_model(make_pipeline(count_vect, EasyEnsembleClassifier(n_jobs=6)),
+                       train_x, train_y, valid_x)
+print("EEC, Count Vectors: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, EasyEnsembleClassifier(n_jobs=6)),
+                       train_x, train_y, valid_x)
+print("EEC, WordLevel TF-IDF: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, EasyEnsembleClassifier(n_jobs=6)),
+                       train_x, train_y, valid_x)
+print("EEC, N-Gram Vectors: ", accuracy)
+
+accuracy = train_model(make_pipeline(count_vect, RUSBoostClassifier()),
+                       train_x, train_y, valid_x)
+print("RUSB, Count Vectors: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, RUSBoostClassifier()),
+                       train_x, train_y, valid_x)
+print("RUSB, WordLevel TF-IDF: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, RUSBoostClassifier()),
+                       train_x, train_y, valid_x)
+print("RUSB, N-Gram Vectors: ", accuracy)
 
 """
 def create_model_architecture(input_size):
