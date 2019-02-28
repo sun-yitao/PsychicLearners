@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 from PIL import Image
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     log_dir = "logs/model_{}_{}".format(MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
-    tensorboard = callbacks.TensorBoard(logdir)
+    tensorboard = callbacks.TensorBoard(log_dir)
 
     model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=EPOCHS,
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
