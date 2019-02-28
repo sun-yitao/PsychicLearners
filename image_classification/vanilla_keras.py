@@ -12,7 +12,7 @@ from keras.applications.resnext import ResNeXt101
 from keras_preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras import backend as K
 
-TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train')
+TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_240x240')
 VAL_DIR = os.path.join('..', 'data', 'image', 'valid')
 CHECKPOINT_PATH = os.path.join('..', 'data', 'keras_checkpoints')
 EPOCHS = 100

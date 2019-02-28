@@ -11,5 +11,6 @@ train_x, train_y = train['title'], train['Category']
 valid_x, valid_y = valid['title'], valid['Category']
 
 clf = text_supervised.TextClassifier(verbose=True, path=os.getcwd())
+clf.max_seq_length=7
 clf.fit(x=train_x, y=train_y, time_limit=10 * 60 * 60)
 print("Classification accuracy is : ", 100 * clf.evaluate(valid_x, valid_y), "%")
