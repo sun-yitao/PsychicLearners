@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from shutil import copy
 
-EXAMPLES_PER_CLASS = 10000
+EXAMPLES_PER_CLASS = 3000
 train_split_df = pd.read_csv(os.path.join(os.getcwd(), 'data', 'train_split.csv'))
 train_split_df.sort_values(by=['Category'], inplace=True)
 value_counts = train_split_df['Category'].value_counts()
@@ -26,15 +26,15 @@ for category in range(train_split_df['Category'].nunique()):
 balanced_df = balanced_df.sample(frac=1, random_state=42)
 print(balanced_df['Category'].value_counts())
 balanced_df.to_csv(os.path.join(os.getcwd(), 'data',
-                                'train_split_balanced.csv'), index=False)
+                                'train_split_balanced_3k.csv'), index=False)
 
 # copy images to make new dataset
 for i in range(train_split_df['Category'].nunique()):
     os.makedirs(os.path.join(os.getcwd(), 'data', 'image',
-                             'v1_train_balanced', str(i)), exist_ok=True)
+                             'v1_train_balanced_3k', str(i)), exist_ok=True)
 for row in balanced_df.itertuples():
     copy(row[5], os.path.join(os.getcwd(), 'data', 'image',
-                             'v1_train_balanced', str(row[3])))
+                             'v1_train_balanced_3k', str(row[3])))
 
 """
 Oversampling category 0 from 3018 to 10000

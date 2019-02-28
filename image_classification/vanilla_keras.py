@@ -22,8 +22,13 @@ N_CLASSES = 58
 MODEL_NO = 1
 LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
+BATCH_SIZE = 128
 
 if __name__ == '__main__':
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = tf.Session(config=config)
+    K.set_session(session)
     # input generators
     train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.2,
                                        height_shift_range=0.2, brightness_range=(0.85, 1.15),
@@ -33,9 +38,9 @@ if __name__ == '__main__':
                                        vertical_flip=False, preprocessing_function=preprocess_input)
     valid_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
     train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
-                                              color_mode='rgb', batch_size=64, interpolation='bicubic')
+                                              color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
-                                              color_mode='rgb', batch_size=64, interpolation='bicubic')
+                                              color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
 
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))

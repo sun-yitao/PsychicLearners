@@ -6,8 +6,8 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 #input_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train')
 #output_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_240x240')
-input_directory = os.path.join(os.getcwd(), 'data', 'image', 'valid')
-output_directory = os.path.join(os.getcwd(), 'data', 'image', 'valid_240x240')
+input_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_balanced')
+output_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_balanced_240x240')
 if not os.path.isdir(output_directory):
     for i in range(58): # categories 0-57
         os.makedirs(os.path.join(output_directory, str(i)), exist_ok=True)
