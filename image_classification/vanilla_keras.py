@@ -13,7 +13,7 @@ from keras_preprocessing.image import ImageDataGenerator, img_to_array, array_to
 from keras import backend as K
 
 TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_240x240')
-VAL_DIR = os.path.join('..', 'data', 'image', 'valid')
+VAL_DIR = os.path.join('..', 'data', 'image', 'valid_240x240')
 CHECKPOINT_PATH = os.path.join('..', 'data', 'keras_checkpoints')
 EPOCHS = 100
 IMAGE_SIZE = (240, 240)  # height, width
