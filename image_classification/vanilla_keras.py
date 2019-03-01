@@ -13,13 +13,13 @@ from keras.applications.resnext import ResNeXt101
 from keras_preprocessing.image import ImageDataGenerator, img_to_array, array_to_img
 from keras import backend as K
 
-TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_240x240')
+TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_undersampled_3k_240x240')
 VAL_DIR = os.path.join('..', 'data', 'image', 'valid_240x240')
 CHECKPOINT_PATH = os.path.join('..', 'data', 'keras_checkpoints')
-EPOCHS = 100
+EPOCHS = 100 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 58
-MODEL_NO = 1
+MODEL_NO = 2
 LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 128
@@ -73,6 +73,6 @@ if __name__ == '__main__':
         os.makedirs(log_dir)
     tensorboard = callbacks.TensorBoard(log_dir)
 
-    model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=EPOCHS,
+    model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000, 
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
                         callbacks=[ckpt, reduce_lr, tensorboard])
