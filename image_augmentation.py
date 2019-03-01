@@ -16,19 +16,25 @@ image_directories = glob(join(train_dir, '*'))
 image_extension = '.jpg'
 augmentation_factor = 1  # factor of number of original images to generate
 
+ia.seed(42) # to produce reproducible augmentations
 def augment_images(np_img_array, img_dir, img_list):
     seq = iaa.Sequential([
         iaa.Sometimes(0.8, 
             iaa.CropAndPad(
-                percent=(0, 0.2),
+                percent=(0.1, 0.3),
                 pad_mode=["edge", "reflect"],
             )),
-        iaa.Sometimes(0.35, iaa.ContrastNormalization((0.5, 1.5), per_channel=0.2)),
+        iaa.Sometimes(0.35, iaa.WithColorspace(
+            to_colorspace="HSV",
+            from_colorspace="RGB",
+            children=iaa.WithChannels(0, iaa.Add((10, 50)))
+        )),
+        iaa.Sometimes(0.35, iaa.ContrastNormalization((0.5, 1.5), per_channel=0.5)),
         iaa.Sometimes(0.35, iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.25))),
         iaa.Sometimes(0.35, iaa.OneOf([
             iaa.CoarseDropout((0.15, 0.2), size_percent=(0.001, 0.02), per_channel=0.1),
             iaa.CoarseSaltAndPepper((0.15, 0.2), size_percent=(0.001, 0.02)),
-            iaa.Superpixels(p_replace=(0.15, 0.2), n_segments=(128, 256))
+            #iaa.Superpixels(p_replace=(0.15, 0.2), n_segments=(128, 256))
             ])
         )], random_order=True)
     images_aug = seq.augment_images(np_img_array)

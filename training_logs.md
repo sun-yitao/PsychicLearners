@@ -23,19 +23,21 @@ Copy the first line for easier adding of rows
 | RUSB, Count Vectors | Default | train_split.csv | NA | 0.375576607187057 | NA |
 | RUSB, WordLevel TF-IDF | Default | train_split.csv | NA | 0.3271303526023267 | NA |
 | RUSB, N-Gram Vectors | Default | train_split.csv | NA | 0.3239126032267501 | NA |
-NB, Count Vectors:  0.6056494378314319
-NB, WordLevel TF-IDF:  0.599108930942148
-NB, N-Gram Vectors:  0.6283161945050741
-LR, Count Vectors:  0.6410146786375944
-LR, WordLevel TF-IDF:  0.6142376034142646
-LR, N-Gram Vectors:  0.6142376034142646
-SVM, N-Gram Vectors:  0.6038492983206198
-RF 580, Count Vectors:  0.5815950736182054
-RF 580, WordLevel TF-IDF:  0.5977888286342191
-RF 5800, Count Vectors:  0.5823226300038253
-RF 5800, WordLevel TF-IDF:  0.5834402166167878
-Xgb, Count Vectors:  0.6374669036850356
-Xgb, WordLevel TF-IDF:  0.6365443321857444
+| NB, Count Vectors | Default | train_split.csv | NA | 0.6056494378314319
+| NB, WordLevel TF-IDF | Default | train_split.csv | NA | 0.599108930942148
+| NB, N-Gram Vectors | Default | train_split.csv | NA | 0.6283161945050741
+| LR, Count Vectors | Default | train_split.csv | NA | 0.6410146786375944
+| LR, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6142376034142646
+| LR, N-Gram Vectors | Default | train_split.csv | NA | 0.6142376034142646
+| SVM, N-Gram Vectors | Default | train_split.csv | NA | 0.6038492983206198
+| RF 580, Count Vectors | Default | train_split.csv | NA | 0.5815950736182054
+| RF 580, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5977888286342191
+| RF 5800, Count Vectors | Default | train_split.csv | NA | 0.5823226300038253
+| RF 5800, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5834402166167878
+| Xgb, Count Vectors | Default | train_split.csv | NA | 0.6374669036850356
+| Xgb, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6365443321857444
+| inception resnet v2 | v1_train, epoch 6 0.53 val 0.52 train
+| inception resnet v2 | v1_train_undersampled_3k, 
 
 ## Image Classification
 

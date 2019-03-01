@@ -4,7 +4,6 @@ import os
 
 import tensorflow as tf
 import keras
-from keras import callbacks
 from keras.layers import *
 from keras.applications.xception import Xception, preprocess_input
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
@@ -65,13 +64,13 @@ if __name__ == '__main__':
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10,
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10,
                                             verbose=1, mode='auto', min_delta=0.001,
                                             cooldown=0, min_lr=0)
     log_dir = "logs/model_{}_{}".format(MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
-    tensorboard = callbacks.TensorBoard(log_dir)
+    tensorboard = keras.callbacks.TensorBoard(log_dir)
 
     model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000, 
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
