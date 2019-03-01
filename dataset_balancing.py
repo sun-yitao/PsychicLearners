@@ -8,6 +8,10 @@ train_split_df.sort_values(by=['Category'], inplace=True)
 value_counts = train_split_df['Category'].value_counts()
 balanced_df = pd.DataFrame()
 
+def remove_extension(path):
+    new_path = path[:-4]
+    return new_path
+
 # make each category the same num of examples
 for category in range(train_split_df['Category'].nunique()):
     n_examples = value_counts[category]
@@ -20,6 +24,9 @@ for category in range(train_split_df['Category'].nunique()):
         print('Oversampling category {} from {} to {}'.format(category, n_examples, EXAMPLES_PER_CLASS))
         multiplier = int(EXAMPLES_PER_CLASS / n_examples) + 1
         class_examples_df = pd.concat([class_examples_df] * multiplier, ignore_index=True).head(EXAMPLES_PER_CLASS)
+        # This will make duplicate images have unique paths
+        class_examples_df['abs_image_path'] = class_examples_df['abs_image_path'].map(remove_extension)
+        class_examples_df['abs_image_path'] = class_examples_df['abs_image_path'] + class_examples_df.index.astype(str) + '.jpg'
     balanced_df = balanced_df.append(class_examples_df, ignore_index=True)
 
 # shuffle rows
@@ -33,8 +40,13 @@ for i in range(train_split_df['Category'].nunique()):
     os.makedirs(os.path.join(os.getcwd(), 'data', 'image',
                              'v1_train_balanced_3k', str(i)), exist_ok=True)
 for row in balanced_df.itertuples():
-    copy(row[5], os.path.join(os.getcwd(), 'data', 'image',
-                             'v1_train_balanced_3k', str(row[3])))
+    dest = os.path.join(os.getcwd(), 'data', 'image',
+                        'v1_train_balanced_3k', str(row[3]),
+                        os.path.split(row[5])[-1])
+    src = os.path.join(os.getcwd(), 'data', 'image', 'original', str(row[4]))
+    if not src.endswith('.jpg'):
+        src += '.jpg'
+    copy(src, dest)
 
 """
 Oversampling category 0 from 3018 to 10000
