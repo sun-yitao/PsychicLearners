@@ -4,10 +4,10 @@ import cv2
 from multiprocessing import pool
 from multiprocessing.dummy import Pool as ThreadPool
 
-#input_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train')
-#output_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_240x240')
-input_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_balanced_3k')
-output_directory = os.path.join(os.getcwd(), 'data', 'image', 'v1_train_balanced_3k_240x240')
+psychic_learners_dir = os.path.split(os.getcwd())[0]
+INPUT_DIRECTORY_NAME = 'v1_train_balanced_3k'
+input_directory = os.path.join(psychic_learners_dir, 'data', 'image', INPUT_DIRECTORY_NAME)
+output_directory = os.path.join(psychic_learners_dir, 'data', 'image', INPUT_DIRECTORY_NAME + '_240x240')
 if not os.path.isdir(output_directory):
     for i in range(58): # categories 0-57
         os.makedirs(os.path.join(output_directory, str(i)), exist_ok=True)

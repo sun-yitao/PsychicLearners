@@ -3,7 +3,9 @@ import pandas as pd
 from shutil import copy
 
 EXAMPLES_PER_CLASS = 3000
-train_split_df = pd.read_csv(os.path.join(os.getcwd(), 'data', 'train_split.csv'))
+psychic_learners_dir = os.path.split(os.getcwd())[0]
+train_split_df = pd.read_csv(os.path.join(psychic_learners_dir,
+                             'data', 'train_split.csv'))
 train_split_df.sort_values(by=['Category'], inplace=True)
 value_counts = train_split_df['Category'].value_counts()
 balanced_df = pd.DataFrame()
@@ -32,18 +34,18 @@ for category in range(train_split_df['Category'].nunique()):
 # shuffle rows
 balanced_df = balanced_df.sample(frac=1, random_state=42)
 print(balanced_df['Category'].value_counts())
-balanced_df.to_csv(os.path.join(os.getcwd(), 'data',
+balanced_df.to_csv(os.path.join(psychic_learners_dir, 'data',
                                 'train_split_balanced_3k.csv'), index=False)
 
 # copy images to make new dataset
 for i in range(train_split_df['Category'].nunique()):
-    os.makedirs(os.path.join(os.getcwd(), 'data', 'image',
+    os.makedirs(os.path.join(psychic_learners_dir, 'data', 'image',
                              'v1_train_balanced_3k', str(i)), exist_ok=True)
 for row in balanced_df.itertuples():
-    dest = os.path.join(os.getcwd(), 'data', 'image',
+    dest = os.path.join(psychic_learners_dir, 'data', 'image',
                         'v1_train_balanced_3k', str(row[3]),
                         os.path.split(row[5])[-1])
-    src = os.path.join(os.getcwd(), 'data', 'image', 'original', str(row[4]))
+    src = os.path.join(psychic_learners_dir, 'data', 'image', 'original', str(row[4]))
     if not src.endswith('.jpg'):
         src += '.jpg'
     copy(src, dest)

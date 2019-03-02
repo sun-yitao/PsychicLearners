@@ -23,23 +23,23 @@ Copy the first line for easier adding of rows
 | RUSB, Count Vectors | Default | train_split.csv | NA | 0.375576607187057 | NA |
 | RUSB, WordLevel TF-IDF | Default | train_split.csv | NA | 0.3271303526023267 | NA |
 | RUSB, N-Gram Vectors | Default | train_split.csv | NA | 0.3239126032267501 | NA |
-| NB, Count Vectors | Default | train_split.csv | NA | 0.6056494378314319
-| NB, WordLevel TF-IDF | Default | train_split.csv | NA | 0.599108930942148
-| NB, N-Gram Vectors | Default | train_split.csv | NA | 0.6283161945050741
-| LR, Count Vectors | Default | train_split.csv | NA | 0.6410146786375944
-| LR, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6142376034142646
-| LR, N-Gram Vectors | Default | train_split.csv | NA | 0.6142376034142646
-| SVM, N-Gram Vectors | Default | train_split.csv | NA | 0.6038492983206198
-| RF 580, Count Vectors | Default | train_split.csv | NA | 0.5815950736182054
-| RF 580, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5977888286342191
-| RF 5800, Count Vectors | Default | train_split.csv | NA | 0.5823226300038253
-| RF 5800, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5834402166167878
-| Xgb, Count Vectors | Default | train_split.csv | NA | 0.6374669036850356
-| Xgb, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6365443321857444
-| inception resnet v2 | v1_train, epoch 6 0.53 val 0.52 train
-| inception resnet v2 | v1_train_undersampled_3k, 
+| NB, Count Vectors | Default | train_split.csv | NA | 0.6056494378314319 | NA |
+| NB, WordLevel TF-IDF | Default | train_split.csv | NA | 0.599108930942148 | NA |
+| NB, N-Gram Vectors | Default | train_split.csv | NA | 0.6283161945050741 | NA |
+| LR, Count Vectors | Default | train_split.csv | NA | 0.6410146786375944 | NA |
+| LR, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6142376034142646 | NA |
+| LR, N-Gram Vectors | Default | train_split.csv | NA | 0.6142376034142646 | NA |
+| SVM, N-Gram Vectors | Default | train_split.csv | NA | 0.6038492983206198 | NA |
+| RF 580, Count Vectors | Default | train_split.csv | NA | 0.5815950736182054 | NA |
+| RF 580, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5977888286342191 | NA |
+| RF 5800, Count Vectors | Default | train_split.csv | NA | 0.5823226300038253 | NA |
+| RF 5800, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5834402166167878 | NA |
+| Xgb, Count Vectors | Default | train_split.csv | NA | 0.6374669036850356 | NA |
+| Xgb, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6365443321857444 | NA |
 
 ## Image Classification
 
 | Model | Hyperparameters | Dataset Version | Train Accuracy | Validation Accuracy | Test Accuracy |
 | ----- | --------------- | --------------- | -------------- | ------------------- | ------------- |
+| inception resnet v2 epoch 6| Default, lr=0.1, batch=128 | v1_train | 0.52 | 0.53 | NA |
+| inception resnet v2 | Default, lr=0.1, batch=128 | v1_train_undersampled_3k |
