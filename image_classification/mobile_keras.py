@@ -11,9 +11,10 @@ from se_resnext import SEResNextImageNet
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
-TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_240x240', 'mobile')
-VAL_DIR = os.path.join('..', 'data', 'image', 'valid_240x240', 'mobile')
-CHECKPOINT_PATH = os.path.join('..', 'data', 'keras_checkpoints', 'mobile')
+psychic_learners_dir = os.path.split(os.getcwd())[0]
+TRAIN_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'v1_train_240x240', 'mobile')
+VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'mobile')
+CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'mobile')
 EPOCHS = 100  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 27
