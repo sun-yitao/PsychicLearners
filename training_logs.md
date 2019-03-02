@@ -42,4 +42,4 @@ Copy the first line for easier adding of rows
 | Model | Hyperparameters | Dataset Version | Train Accuracy | Validation Accuracy | Test Accuracy |
 | ----- | --------------- | --------------- | -------------- | ------------------- | ------------- |
 | inception resnet v2 epoch 6| Default, lr=0.1, batch=128 | v1_train | 0.52 | 0.53 | NA |
-| inception resnet v2 | Default, lr=0.1, batch=128 | v1_train_undersampled_3k |
+| inception resnet v2 epoch 25| Default, lr=0.1, batch=128 | v1_train_undersampled_3k | 0.52 | 0.35 | NA |

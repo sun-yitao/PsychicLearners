@@ -1,0 +1,8 @@
+Beauty: 
+    can implement 30% crop augment
+    Some classes are way too big (80k-60k)
+    Classes are way too similar
+Fashion: 
+    Just some random clothes, Some classes 27k examples
+Mobile: 
+    Challenging for CNN. Some classes have thousands of examples while other have hundreds or less

@@ -4,6 +4,7 @@ import cv2
 from multiprocessing import pool
 from multiprocessing.dummy import Pool as ThreadPool
 
+# This script downscales images to make it faster to transmit to the cloud gpu for training
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 INPUT_DIRECTORY_NAME = 'v1_train_balanced_3k'
 input_directory = os.path.join(psychic_learners_dir, 'data', 'image', INPUT_DIRECTORY_NAME)
