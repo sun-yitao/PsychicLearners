@@ -36,6 +36,7 @@ Copy the first line for easier adding of rows
 | RF 5800, WordLevel TF-IDF | Default | train_split.csv | NA | 0.5834402166167878 | NA |
 | Xgb, Count Vectors | Default | train_split.csv | NA | 0.6374669036850356 | NA |
 | Xgb, WordLevel TF-IDF | Default | train_split.csv | NA | 0.6365443321857444 | NA |
+| fastText| Default| train_split.csv | NA | 0.739 | ------------- |
 
 ## Image Classification
 

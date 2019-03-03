@@ -10,10 +10,10 @@ from keras.layers import Dense, Input
 from se_resnext import SEResNextImageNet
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
-TRAIN_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'v1_train_240x240', 'beauty')
+TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
+                         'image', 'v1_train_nodups_240x240', 'beauty')
 VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'beauty')
 CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'beauty')
 EPOCHS = 100 # only for calculation of decay

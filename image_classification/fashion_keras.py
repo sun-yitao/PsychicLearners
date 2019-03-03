@@ -12,7 +12,8 @@ from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
-TRAIN_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'v1_train_240x240', 'fashion')
+TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
+                         'image', 'v1_train_nodups_240x240', 'fashion')
 VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'fashion')
 CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'fashion')
 EPOCHS = 100  # only for calculation of decay
