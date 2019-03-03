@@ -20,7 +20,7 @@ EPOCHS = 100 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 MODEL_NO = 1
-LR_BASE = 1.0
+LR_BASE = 10.0
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
 
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10,
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5,
                                             verbose=1, mode='auto', min_delta=0.001,
                                             cooldown=0, min_lr=0)
     log_dir = "logs_beauty/model_{}_{}".format(MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
