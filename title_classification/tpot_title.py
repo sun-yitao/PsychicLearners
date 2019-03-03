@@ -4,7 +4,6 @@ import numpy as np
 from tpot import TPOTClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.preprocessing import OneHotEncoder
-from keras.utils.np_utils import to_categorical
 import multiprocessing
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 multiprocessing.set_start_method('forkserver')
@@ -23,8 +22,11 @@ X_valid = tfidf_vect.fit_transform(valid['title'])
 #                                   stop_words='english', token_pattern=r'\w{1,}',
 #                                   ngram_range=(1, 3))
 #tfidf_vect_ngram.fit(train['title'])
-y_train = to_categorical(train_y)
-y_valid = to_categorical(valid_y)
+#y_train = train_y.reshape(-1, 1)
+#y_valid = valid_y.reshape(-1, 1)
+#y_train = OneHotEncoder(sparse=False).fit_transform(y_train)
+#y_valid = OneHotEncoder(sparse=False).fit_transform(y_train)
+#print(x_train.shape)
 
 pipeline_optimizer = TPOTClassifier(generations=5, population_size=20,
                                     offspring_size=None, mutation_rate=0.9,
@@ -40,5 +42,5 @@ pipeline_optimizer = TPOTClassifier(generations=5, population_size=20,
                                     early_stop=None,
                                     disable_update_check=False, 
                                     verbosity=3)
-pipeline_optimizer.fit(X_train, y_train)
-print(pipeline_optimizer.score(X_valid, y_valid))
+pipeline_optimizer.fit(X_train, train_y)
+print(pipeline_optimizer.score(X_valid, valid_y))
