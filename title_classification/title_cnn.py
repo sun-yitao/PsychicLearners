@@ -32,15 +32,19 @@ maxlen = 10
 X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
 X_valid = pad_sequences(X_valid, padding='post', maxlen=maxlen)
 
+k_regularizer = keras.layers.regularizers.l2(0.0015)
+
 def ConvolutionalBlock(input_shape, num_filters):
     model = keras.models.Sequential()
     #1st conv layer
-    model.add(Conv1D(filters=num_filters, kernel_size=3,
+    model.add(Conv1D(filters=num_filters, kernel_size=3, kernel_regularizer=k_regularizer,
+                     kernel_initializer='he_normal',
                      strides=1, padding="same", input_shape=input_shape))
     model.add(BatchNormalization())
     model.add(Activation("relu"))
     #2nd conv layer
-    model.add(Conv1D(filters=num_filters,
+    model.add(Conv1D(filters=num_filters, kernel_regularizer=k_regularizer,
+                     kernel_initializer='he_normal',
                      kernel_size=3, strides=1, padding="same"))
     model.add(BatchNormalization())
     model.add(Activation("relu"))
@@ -52,11 +56,12 @@ def conv_shape(conv):
 
 def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, top_k, learning_rate=10.0):
     inputs = Input(shape=(sequence_max_length, ), name='input')
-    embedded_seq = Embedding(vocab_size, embedding_dim,
+    embedded_seq = Embedding(vocab_size, embedding_dim, embeddings_initializer='he_normal', embeddings_regularizer=k_regularizer,
                              input_length=sequence_max_length)(inputs)
     embedded_seq = BatchNormalization()(embedded_seq)
     #1st Layer
-    conv = Conv1D(filters=64, kernel_size=3, strides=2,
+    conv = Conv1D(filters=64, kernel_size=3, strides=2, kernel_regularizer=k_regularizer,
+                  kernel_initializer='he_normal',
                     padding="same")(embedded_seq)
 
     #ConvBlocks
@@ -74,11 +79,13 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
     #fully connected layers
     # in original paper they didn't used dropouts
     flat = Flatten()(conv)
-    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal')(flat)
+    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal',kernel_regularizer=k_regularizer)(flat)
     fc1 = Dropout(0.3)(fc1)
-    fc2 = Dense(512, activation='relu', kernel_initializer='he_normal')(fc1)
+    fc2 = Dense(512, activation='relu', kernel_initializer='he_normal',
+                kernel_regularizer=k_regularizer)(fc1)
     fc2 = Dropout(0.3)(fc2)
-    out = Dense(num_classes, activation='softmax')(fc2)
+    out = Dense(num_classes, activation='softmax',
+                kernel_regularizer=k_regularizer)(fc2)
 
     #optimizer
     #sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=False)
