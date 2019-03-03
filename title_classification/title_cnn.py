@@ -66,7 +66,7 @@ model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
 model.add(layers.GlobalAveragePooling1D())
-model.add(layers.Dropout(0.5))
+model.add(layers.Dropout(0.2))
 model.add(layers.Dense(100, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
@@ -82,7 +82,7 @@ history = model.fit(X_train, y_train,
                     epochs=1000,
                     verbose=True,
                     validation_data=(X_valid, y_valid),
-                    batch_size=2048)
+                    batch_size=4096)
 loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
 print("Training Accuracy: {:.4f}".format(accuracy))
 loss, accuracy = model.evaluate(X_valid, y_valid, verbose=False)
