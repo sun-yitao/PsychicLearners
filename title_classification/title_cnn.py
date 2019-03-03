@@ -8,6 +8,7 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
@@ -27,6 +28,9 @@ tokenizer.fit_on_texts(train_x)
 X_train = tokenizer.texts_to_sequences(train_x)
 X_valid = tokenizer.texts_to_sequences(valid_x)
 vocab_size = len(tokenizer.word_index) + 1
+maxlen = 10
+X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
+X_valid = pad_sequences(X_valid, padding='post', maxlen=maxlen)
 
 def ConvolutionalBlock(input_shape, num_filters):
     model = keras.models.Sequential()
@@ -46,7 +50,7 @@ def conv_shape(conv):
     return conv.get_shape().as_list()[1:]
 
 
-def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, top_k, learning_rate=1.0):
+def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, top_k, learning_rate=10.0):
     inputs = Input(shape=(sequence_max_length, ), name='input')
     embedded_seq = Embedding(vocab_size, embedding_dim,
                              input_length=sequence_max_length)(inputs)
@@ -69,7 +73,8 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
 
     #fully connected layers
     # in original paper they didn't used dropouts
-    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal')(conv)
+    flat = Flatten()(conv)
+    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal')(flat)
     fc1 = Dropout(0.3)(fc1)
     fc2 = Dense(512, activation='relu', kernel_initializer='he_normal')(fc1)
     fc2 = Dropout(0.3)(fc2)
@@ -85,7 +90,7 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
 
 num_filters = [64, 128, 256, 512]
 model = vdcnn_model(num_filters=num_filters, num_classes=58, vocab_size=vocab_size,
-                    sequence_max_length=10, embedding_dim=16, top_k=3)
+                    sequence_max_length=maxlen, embedding_dim=16, top_k=3)
 model.summary()
 """
 def create_embedding_matrix(filepath, word_index, embedding_dim):
@@ -142,9 +147,9 @@ sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay,
 model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
-model.summary()
+model.summary()"""
 print(X_train.shape)
-print(y_train.shape)"""
+print(y_train.shape)
 history = model.fit(X_train, y_train,
                     epochs=1000,
                     verbose=True,
