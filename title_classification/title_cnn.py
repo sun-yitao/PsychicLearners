@@ -7,7 +7,7 @@ from keras.layers import *
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
-
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
@@ -22,6 +22,11 @@ valid_x, valid_y = valid['title'].values, valid['Category'].values
 y_train = keras.utils.np_utils.to_categorical(train_y)
 y_valid = keras.utils.np_utils.to_categorical(valid_y)
 
+tokenizer = Tokenizer(num_words=5000)
+tokenizer.fit_on_texts(train_x)
+X_train = tokenizer.texts_to_sequences(train_x)
+X_valid = tokenizer.texts_to_sequences(valid_x)
+vocab_size = len(tokenizer.word_index) + 1
 
 def ConvolutionalBlock(input_shape, num_filters):
     model = keras.models.Sequential()
@@ -37,63 +42,14 @@ def ConvolutionalBlock(input_shape, num_filters):
     model.add(Activation("relu"))
     return model
 
-def top_kmax(x):
-    x = tf.transpose(x, [0, 2, 1])
-    k_max = tf.nn.top_k(x, k=top_k)
-    return tf.reshape(k_max[0], (-1, num_filters[-1]*top_k))
-
-def get_char_dict():
-    char_dict = {}
-    for i, c in enumerate(ALPHABET):
-        char_dict[c] = i+1
-    return char_dict
-
-def char2vec(text, max_length=FEATURE_LEN):
-    char_dict = get_char_dict()
-    data = np.zeros(max_length)
-    for i in range(0, len(text)):
-        if i >= max_length:
-            return data
-        elif text[i] in char_dict:
-            data[i] = char_dict[text[i]]
-        else:
-            data[i] = 68
-    return data
-
 def conv_shape(conv):
     return conv.get_shape().as_list()[1:]
 
-replace_ip = re.compile(r'([0-9]+)(?:\.[0-9]+){3}',)
 
-def text_to_wordlist(text, remove_stopwords=True, stem_words=False):
-    # Clean the text, with the option to remove stopwords and to stem words.
-    # Convert words to lower case and split them
-    text = text.lower().split()
-    # Optionally, remove stop words
-    if remove_stopwords:
-        stops = set(stopwords.words("english"))
-        text = [w for w in text if not w in stops]
-
-    text = " ".join(text)
-
-    #Replace IP address
-    text = replace_ip.sub('', text)
-
-    # Optionally, shorten words to their stems
-    if stem_words:
-        text = text.split()
-        stemmer = SnowballStemmer('english')
-        stemmed_words = [stemmer.stem(word) for word in text]
-        text = " ".join(stemmed_words)
-
-    # Return a list of words
-    return(text)
-
-def vdcnn_model(num_filters, num_classes, sequence_max_length, num_chars, embedding_size, top_k, learning_rate=0.001):
-    inputs = Input(shape=(sequence_max_length, ), dtype='int32', name='input')
-
-    embedded_seq = Embedding(num_chars, embedding_size,
-                                input_length=sequence_max_length)(inputs)
+def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, top_k, learning_rate=1.0):
+    inputs = Input(shape=(sequence_max_length, ), name='input')
+    embedded_seq = Embedding(vocab_size, embedding_dim,
+                             input_length=sequence_max_length)(inputs)
     embedded_seq = BatchNormalization()(embedded_seq)
     #1st Layer
     conv = Conv1D(filters=64, kernel_size=3, strides=2,
@@ -104,32 +60,32 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, num_chars, embedd
         conv = ConvolutionalBlock(conv_shape(conv), num_filters[i])(conv)
         conv = MaxPooling1D(pool_size=3, strides=2, padding="same")(conv)
 
-    def _top_k(x):
+    """def _top_k(x):
         x = tf.transpose(x, [0, 2, 1])
         k_max = tf.nn.top_k(x, k=top_k)
         return tf.reshape(k_max[0], (-1, num_filters[-1] * top_k))
 
-    k_max = Lambda(_top_k, output_shape=(num_filters[-1] * top_k,))(conv)
+    k_max = Lambda(_top_k, output_shape=(num_filters[-1] * top_k,))(conv)"""
 
     #fully connected layers
     # in original paper they didn't used dropouts
-    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal')(k_max)
+    fc1 = Dense(512, activation='relu', kernel_initializer='he_normal')(conv)
     fc1 = Dropout(0.3)(fc1)
     fc2 = Dense(512, activation='relu', kernel_initializer='he_normal')(fc1)
     fc2 = Dropout(0.3)(fc2)
-    out = Dense(num_classes, activation='sigmoid')(fc2)
+    out = Dense(num_classes, activation='softmax')(fc2)
 
     #optimizer
     #sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=False)
 
     model = keras.models.Model(inputs=inputs, outputs=out)
     model.compile(optimizer='rmsprop',
-                    loss='binary_crossentropy', metrics=['accuracy'])
+                    loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
 num_filters = [64, 128, 256, 512]
-model = vdcnn_model(num_filters=num_filters, num_classes=6, num_chars=69,
-                    sequence_max_length=FEATURE_LEN, embedding_size=16, top_k=3)
+model = vdcnn_model(num_filters=num_filters, num_classes=58, vocab_size=vocab_size,
+                    sequence_max_length=10, embedding_dim=16, top_k=3)
 model.summary()
 """
 def create_embedding_matrix(filepath, word_index, embedding_dim):
@@ -188,7 +144,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 model.summary()
 print(X_train.shape)
-print(y_train.shape)
+print(y_train.shape)"""
 history = model.fit(X_train, y_train,
                     epochs=1000,
                     verbose=True,
@@ -197,4 +153,4 @@ history = model.fit(X_train, y_train,
 loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
 print("Training Accuracy: {:.4f}".format(accuracy))
 loss, accuracy = model.evaluate(X_valid, y_valid, verbose=False)
-print("Testing Accuracy:  {:.4f}".format(accuracy))"""
+print("Testing Accuracy:  {:.4f}".format(accuracy))
