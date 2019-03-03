@@ -64,7 +64,8 @@ model = keras.models.Sequential()
 model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
-model.add(layers.GlobalAvgPool1D())
+model.add(layers.GlobalAveragePooling1D())
+model.add(layers.Dropout(0.5))
 model.add(layers.Dense(100, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 model.compile(optimizer='adam',
