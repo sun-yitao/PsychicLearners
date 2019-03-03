@@ -7,7 +7,7 @@ from keras.layers import *
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+#os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -15,6 +15,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 LR_BASE = 100.0
 EPOCHS = 500
+
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
@@ -32,7 +33,7 @@ maxlen = 10
 X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
 X_valid = pad_sequences(X_valid, padding='post', maxlen=maxlen)
 
-k_regularizer = keras.layers.regularizers.l2(0.0015)
+k_regularizer = keras.regularizers.l2(0.0015)
 
 def ConvolutionalBlock(input_shape, num_filters):
     model = keras.models.Sequential()
