@@ -63,8 +63,8 @@ for row in test.itertuples():
 
 # This was added after it was officially confirmed that the 3 big categories can be used in prediction
 # in order to sort the category folders into big categories and apply a separate classifier to each big category
-train_category_directories = glob(os.path.join(train_dir, '*'))
-train_category_directories = [dir for dir in train_category_directories if os.path.isdir(dir)]
+#train_category_directories = glob(os.path.join(train_dir, '*'))
+#train_category_directories = [dir for dir in train_category_directories if os.path.isdir(dir)]
 valid_category_directories = glob(os.path.join(valid_dir, '*'))
 valid_category_directories = [dir for dir in valid_category_directories if os.path.isdir(dir)]
 mobile_categories = [35, 53, 40, 39, 52, 45, 31, 51, 49, 56, 38,
@@ -86,14 +86,14 @@ def move_directory_to_big_category(small_category_directory):
         move(small_category_directory, dst)
 
 for big_category in ['beauty', 'fashion', 'mobile']:
-    os.makedirs(os.path.join(train_dir, big_category), exist_ok=True)
+  #  os.makedirs(os.path.join(train_dir, big_category), exist_ok=True)
     os.makedirs(os.path.join(valid_dir, big_category), exist_ok=True)
 
-for train_cat_dir in train_category_directories:
-    move_directory_to_big_category(train_cat_dir)
+#for train_cat_dir in train_category_directories:
+#    move_directory_to_big_category(train_cat_dir)
 for valid_cat_dir in valid_category_directories:
     move_directory_to_big_category(valid_cat_dir)
-
+"""
 # check that all the images are present without duplicates
 images = glob(os.path.join(train_dir, '**', '*.jpg'), recursive=True) + \
          glob(os.path.join(valid_dir, '**', '*.jpg'), recursive=True) + \
@@ -101,4 +101,4 @@ images = glob(os.path.join(train_dir, '**', '*.jpg'), recursive=True) + \
 original_images = glob(os.path.join(output_dir, '**', '*.jpg'), recursive=True)
 images = [os.path.split(filename)[-1] for filename in images]
 original_images = [os.path.split(filename)[-1] for filename in original_images]
-assert sorted(images) == sorted(original_images)
+assert sorted(images) == sorted(original_images)"""
