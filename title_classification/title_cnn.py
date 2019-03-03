@@ -12,7 +12,8 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 K.set_session(session)
-
+LR_BASE = 0.1
+EPOCHS = 100
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
@@ -68,6 +69,9 @@ model.add(layers.GlobalAveragePooling1D())
 model.add(layers.Dropout(0.5))
 model.add(layers.Dense(100, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
+decay = LR_BASE/(EPOCHS)
+sgd = keras.optimizers.SGD(lr=0.1, decay=decay,
+                           momentum=0.9, nesterov=True)
 model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
@@ -75,7 +79,7 @@ model.summary()
 print(X_train.shape)
 print(y_train.shape)
 history = model.fit(X_train, y_train,
-                    epochs=50,
+                    epochs=1000,
                     verbose=True,
                     validation_data=(X_valid, y_valid),
                     batch_size=2048)
