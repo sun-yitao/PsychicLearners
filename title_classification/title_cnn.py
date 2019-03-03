@@ -45,7 +45,7 @@ maxlen = 10
 X_train = pad_sequences(X_train, padding='post', maxlen=maxlen)
 X_valid = pad_sequences(X_valid, padding='post', maxlen=maxlen)
 
-embedding_dim = 50
+embedding_dim = 100
 """
 embedding_matrix = create_embedding_matrix(
             'data/glove_word_embeddings/glove.6B.50d.txt',
@@ -66,7 +66,6 @@ model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
 model.add(layers.GlobalAveragePooling1D())
-model.add(layers.Dropout(0.2))
 model.add(layers.Dense(1000, activation='relu'))
 model.add(layers.Dropout(0.2))
 model.add(layers.Dense(1000, activation='relu'))
