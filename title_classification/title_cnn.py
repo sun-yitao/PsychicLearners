@@ -36,7 +36,7 @@ def create_embedding_matrix(filepath, word_index, embedding_dim):
                     vector, dtype=np.float32)[:embedding_dim]
     return embedding_matrix
 
-tokenizer = Tokenizer(num_words=5000)
+tokenizer = Tokenizer(num_words=10000)
 tokenizer.fit_on_texts(train_x)
 X_train = tokenizer.texts_to_sequences(train_x)
 X_valid = tokenizer.texts_to_sequences(valid_x)
@@ -69,7 +69,6 @@ model.add(layers.GlobalAveragePooling1D())
 model.add(layers.Dense(1000, activation='relu'))
 model.add(layers.Dropout(0.2))
 model.add(layers.Dense(1000, activation='relu'))
-model.add(layers.Dropout(0.2))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
 sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay,
