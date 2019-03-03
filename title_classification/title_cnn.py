@@ -77,7 +77,7 @@ history = model.fit(X_train, y_train,
                     epochs=50,
                     verbose=True,
                     validation_data=(X_valid, y_valid),
-                    batch_size=128)
+                    batch_size=2048)
 loss, accuracy = model.evaluate(X_train, y_train, verbose=False)
 print("Training Accuracy: {:.4f}".format(accuracy))
 loss, accuracy = model.evaluate(X_valid, y_valid, verbose=False)
