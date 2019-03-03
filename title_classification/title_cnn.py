@@ -73,7 +73,7 @@ model.add(layers.Dense(100, activation='relu'))
 model.add(layers.Dropout(0.2))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
-sgd = keras.optimizers.SGD(lr=10.0, decay=decay,
+sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay,
                            momentum=0.9, nesterov=True)
 model.compile(optimizer='adam',
               loss='categorical_crossentropy',
