@@ -14,10 +14,6 @@ def print_results(N, p, r):
     print("P@{}\t{:.3f}".format(1, p))
     print("R@{}\t{:.3f}".format(1, r))
 
-def parse_labels(path):
-    with open(path) as f:
-        return np.array(list(map(lambda x: int(x[9:]), f.read().split())))
-
 if __name__ == "__main__":
     psychic_learners_dir = os.path.split(os.getcwd())[0]
     train_data = os.path.join(psychic_learners_dir, 'data', 'train_split.txt')
