@@ -12,7 +12,7 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 K.set_session(session)
-LR_BASE = 1.0
+LR_BASE = 10.0
 EPOCHS = 500
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
