@@ -1,10 +1,17 @@
 import os
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 import keras
 from keras import layers
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+from keras import backend as K
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
+K.set_session(session)
 
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
@@ -57,8 +64,8 @@ model = keras.models.Sequential()
 model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
-model.add(layers.GlobalMaxPool1D())
-model.add(layers.Dense(200, activation='relu'))
+model.add(layers.GlobalAvgPool1D())
+model.add(layers.Dense(100, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 model.compile(optimizer='adam',
               loss='categorical_crossentropy',
