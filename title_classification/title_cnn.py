@@ -66,9 +66,9 @@ model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
 model.add(layers.GlobalAveragePooling1D())
-model.add(layers.Dense(1000, activation='relu'))
-model.add(layers.Dropout(0.2))
-model.add(layers.Dense(1000, activation='relu'))
+model.add(layers.Dense(500, activation='relu'))
+model.add(layers.Dropout(0.5))
+model.add(layers.Dense(500, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
 sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay,
