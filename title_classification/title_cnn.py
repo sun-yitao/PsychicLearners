@@ -65,9 +65,8 @@ model = keras.models.Sequential()
 model.add(layers.Embedding(input_dim=vocab_size,
                            output_dim=embedding_dim,
                            input_length=maxlen))
-model.add(layers.Conv1D(64, 3, activation='relu'))
-model.add(layers.Conv1D(64, 3, activation='relu'))
-model.add(layers.GlobalAveragePooling1D())
+model.add(layers.Conv1D(64, 5, activation='relu'))
+model.add(layers.GlobalMaxPooling1D())
 model.add(layers.Dense(500, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
