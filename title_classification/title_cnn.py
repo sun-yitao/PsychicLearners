@@ -8,11 +8,13 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
 #os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 K.set_session(session)
+
 LR_BASE = 100.0
 EPOCHS = 500
 
@@ -55,7 +57,7 @@ def conv_shape(conv):
     return conv.get_shape().as_list()[1:]
 
 
-def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, top_k, learning_rate=10.0):
+def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, learning_rate=10.0):
     inputs = Input(shape=(sequence_max_length, ), name='input')
     embedded_seq = Embedding(vocab_size, embedding_dim, embeddings_initializer='he_normal', embeddings_regularizer=k_regularizer,
                              input_length=sequence_max_length)(inputs)
@@ -98,7 +100,7 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
 
 num_filters = [64, 128, 256, 512]
 model = vdcnn_model(num_filters=num_filters, num_classes=58, vocab_size=vocab_size,
-                    sequence_max_length=maxlen, embedding_dim=16, top_k=3)
+                    sequence_max_length=maxlen, embedding_dim=50)
 model.summary()
 """
 def create_embedding_matrix(filepath, word_index, embedding_dim):
