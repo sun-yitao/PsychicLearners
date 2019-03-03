@@ -67,6 +67,7 @@ model.add(layers.Embedding(input_dim=vocab_size,
                            input_length=maxlen))
 model.add(layers.Conv1D(64, 5, activation='relu'))
 model.add(layers.GlobalMaxPooling1D())
+model.add(layers.Dropout(0.5))
 model.add(layers.Dense(500, activation='relu'))
 model.add(layers.Dense(58, activation='softmax'))
 decay = LR_BASE/(EPOCHS)
