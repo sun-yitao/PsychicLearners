@@ -8,7 +8,7 @@ from keras.layers import Dense, Input
 #from keras.applications.nasnet import NASNetLarge
 #from keras.applications.resnext import ResNeXt101
 from random_eraser import get_random_eraser
-from se_resnext import SEResNextImageNet, SEResNext
+from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
@@ -48,16 +48,12 @@ if __name__ == '__main__':
 
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = SEResNext(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                           depth=29,
-                           cardinality=8,
-                           width=64,
-                           weight_decay=1e-5,
-                           include_top=False,
-                           weights=None,
-                           input_tensor=input_tensor,
-                           pooling='avg',
-                           classes=N_CLASSES)
+    base_model = SEInceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                    include_top=False,
+                                    weights=None,
+                                    input_tensor=input_tensor,
+                                    pooling='avg',
+                                    classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
