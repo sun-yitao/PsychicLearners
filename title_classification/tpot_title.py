@@ -9,12 +9,12 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 multiprocessing.set_start_method('forkserver')
 
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
-train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
-valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
+train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
+valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))
 train_x, train_y = train['title'].values, train['Category'].values
 valid_x, valid_y = valid['title'].values, valid['Category'].values
 
-tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_features=10000,
+tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_features=1000, max_df=0.2,
                              stop_words='english', token_pattern=r'\w{1,}')
 X_train = tfidf_vect.fit_transform(train_x).A
 X_valid = tfidf_vect.fit_transform(valid_x).A

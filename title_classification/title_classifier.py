@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn import decomposition, ensemble
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
 
 import keras
 from keras.preprocessing import text, sequence
@@ -27,9 +28,9 @@ from imblearn.metrics import classification_report_imbalanced"""
 RANDOM_STATE = 42
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
-data_directory = os.path.join('..', 'data')
-train = pd.read_csv(os.path.join(data_directory, 'train_split_balanced.csv'))
-valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
+data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
+train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
+valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))
 train_x, train_y = train['title'], train['Category']
 valid_x, valid_y = valid['title'], valid['Category']
 """
@@ -51,27 +52,26 @@ class DummySampler(object):
 
     def fit_resample(self, X, y):
         return self.sample(X, y) = DummySampler() #Change this with an if desired"""
-print(train_x.head(10))
 # label encode the target variable
 encoder = preprocessing.LabelEncoder()
 train_y = encoder.fit_transform(train_y)
 valid_y = encoder.fit_transform(valid_y)
 
 # create a count vectorizer object
-count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', #Stop words may not be needed as they seem to be already removed
-                             stop_words='english', token_pattern=r'\w{1,}')
+count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10, #Stop words may not be needed as they seem to be already removed
+                             stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b')
 count_vect.fit(train['title'])
 
 # transform the training and validation data using count vectorizer object
 
 # word level tf-idf
-tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode',
-                             stop_words='english', token_pattern=r'\w{1,}')
+tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
+                             stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b')
 tfidf_vect.fit(train['title'])
 
 # ngram level tf-idf
-tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode',
-                                   stop_words='english', token_pattern=r'\w{1,}',
+tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
+                                   stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b',
                                    ngram_range=(1, 3))
 tfidf_vect_ngram.fit(train['title'])
 
@@ -79,7 +79,7 @@ tfidf_vect_ngram.fit(train['title'])
 # load the pre-trained word-embedding vectors
 print('Loading word2vec')
 embeddings_index = {}
-for i, line in enumerate(open('crawl-300d-2M.vec')): #This for loop takes FOREVER to run, need to find a better way to load word2vec
+for i, line in enumerate(open('crawl-300d-2M.vec')): #This for loop takes FOREVER to run, need to find a better way to load word2vec using np.loadtxt or something
     values = line.split()
     embeddings_index[values[0]] = np.asarray(values[1:], dtype='float32')
 
@@ -154,6 +154,8 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
         feature_vector_valid = feature_vector_valid.to_csc()
     classifier.fit(feature_vector_train, label)
     # predict the labels on validation dataset
+    predictions = classifier.predict(feature_vector_train)
+    print('Train Acc: {}'.format(metrics.accuracy_score(predictions, label)))
     predictions = classifier.predict(feature_vector_valid)
     if is_neural_net:
         predictions = predictions.argmax(axis=-1)
@@ -196,49 +198,51 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
                        train_x, train_y, valid_x)
 print("LR, N-Gram Vectors: ", accuracy)"""
 
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.1)), 
-                        train_x, train_y, valid_x)
-print("SVM, N-Gram Vectors: ", accuracy)
-
+#accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.01)), 
+#                        train_x, train_y, valid_x)
+#print("SVM, N-Gram Vectors: ", accuracy)
+"""
 # RF on Count Vectors
 
-accuracy = train_model(make_pipeline(count_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+accuracy = train_model(make_pipeline(count_vect, ensemble.RandomForestClassifier(n_estimators=50, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
-print("RF 580, Count Vectors: ", accuracy)
+print("RF, Count Vectors: ", accuracy)
 
 # RF on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*10, min_samples_leaf=10)),
+accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=50, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
-print("RF 580, WordLevel TF-IDF: ", accuracy)
-
-accuracy = train_model(make_pipeline(count_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*100, min_samples_leaf=10)),
-                       train_x, train_y, valid_x)
-print("RF 5800, Count Vectors: ", accuracy)
-
-# RF on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=10, max_depth=58*100, min_samples_leaf=10)),
-                       train_x, train_y, valid_x)
-print("RF 5800, WordLevel TF-IDF: ", accuracy)
-
+print("RF, WordLevel TF-IDF: ", accuracy)"""
+params = {
+    'max_depth': [9, 11, 13],
+    'learning_rate': [0.05, 0.1, 0.2],
+    'n_estimators': range(50, 200, 50),
+    'gamma': [i/10.0 for i in range(0, 5)],
+    'subsample': [i/10.0 for i in range(6, 10)],
+    'colsample_bytree': [i/10.0 for i in range(6, 10)],
+    'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05]
+}
 # Extereme Gradient Boosting on Count Vectors
-accuracy = train_model(make_pipeline(count_vect, xgboost.XGBClassifier(max_depth=3, learning_rate=0.1,
-                                                                       n_estimators=100, silent=True,
-                                                                       objective="binary:logistic", booster='gbtree',
-                                                                       n_jobs=6, nthread=None, gamma=0, min_child_weight=1,
-                                                                       max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
-                                                                       reg_alpha=0, reg_lambda=1)),
-                       train_x, train_y, valid_x)
-print("Xgb, Count Vectors: ", accuracy)
+gridsearch = GridSearchCV(estimator=xgboost.XGBClassifier(max_depth=9, learning_rate=0.1, scale_pos_weight=1,
+                                                          n_estimators=50, silent=True,
+                                                          objective="binary:logistic", booster='gbtree',
+                                                          n_jobs=6, nthread=None, gamma=0, min_child_weight=1,
+                                                          max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                                                          reg_alpha=0, reg_lambda=1),
+                          param_grid=params, scoring='accuracy', n_jobs=-1, verbose=2)
+accuracy = train_model(make_pipeline(tfidf_vect, gridsearch), train_x, train_y, valid_x)
+print(gridsearch.best_params_, gridsearch.best_score_)
+print("Xgb, WordLevel TF-IDF: ", accuracy)
 
 # Extereme Gradient Boosting on Word Level TF IDF Vectors
-accuracy = train_model(make_pipeline(tfidf_vect, xgboost.XGBClassifier(max_depth=3, learning_rate=0.1,
-                                                                       n_estimators=100, silent=True,
-                                                                       objective="binary:logistic", booster='gbtree',
-                                                                       n_jobs=6, nthread=None, gamma=0, min_child_weight=1,
-                                                                       max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
-                                                                       reg_alpha=0, reg_lambda=1)),
-                       train_x, train_y, valid_x)
-print("Xgb, WordLevel TF-IDF: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=xgboost.XGBClassifier(max_depth=5, learning_rate=0.1, scale_pos_weight=1,
+                                                                    n_estimators=50, silent=True,
+                                                                    objective="binary:logistic", booster='dart',
+                                                                    n_jobs=6, nthread=None, gamma=0, min_child_weight=2,
+                                                                    max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                                                                    reg_alpha=0, reg_lambda=1),
+                                                                    param_grid=params, scoring='accuracy', n_jobs=-1)),
+                                                                    train_x, train_y, valid_x)
+print("Xgb, N-Gram Vectors: ", accuracy)
 
 """
 def create_model_architecture(input_size):
