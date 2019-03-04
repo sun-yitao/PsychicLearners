@@ -15,12 +15,14 @@ config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 K.set_session(session)
 
-LR_BASE = 100.0
-EPOCHS = 500
+LR_BASE = 0.01
+EPOCHS = 100
 
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))
+train = train.loc[(train['Category'] >= 0) & (train['Category'] <= 16)]
+valid = valid.loc[(train['Category'] >= 0) & (valid['Category'] <= 16)]
 train_x, train_y = train['title'].values, train['Category'].values
 valid_x, valid_y = valid['title'].values, valid['Category'].values
 y_train = keras.utils.np_utils.to_categorical(train_y)
@@ -57,7 +59,7 @@ def conv_shape(conv):
     return conv.get_shape().as_list()[1:]
 
 
-def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, learning_rate=10.0):
+def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embedding_dim, learning_rate=LR_BASE):
     inputs = Input(shape=(sequence_max_length, ), name='input')
     embedded_seq = Embedding(vocab_size, embedding_dim, embeddings_initializer='he_normal', embeddings_regularizer=k_regularizer,
                              input_length=sequence_max_length)(inputs)
@@ -82,6 +84,7 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
     #fully connected layers
     # in original paper they didn't used dropouts
     flat = Flatten()(conv)
+    flat = Dropout(0.3)(flat)
     fc1 = Dense(512, activation='relu', kernel_initializer='he_normal',kernel_regularizer=k_regularizer)(flat)
     fc1 = Dropout(0.3)(fc1)
     fc2 = Dense(512, activation='relu', kernel_initializer='he_normal',
@@ -91,15 +94,15 @@ def vdcnn_model(num_filters, num_classes, sequence_max_length, vocab_size, embed
                 kernel_regularizer=k_regularizer)(fc2)
 
     #optimizer
-    #sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=False)
+    sgd = keras.optimizers.SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
 
     model = keras.models.Model(inputs=inputs, outputs=out)
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer=sgd,
                     loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
 num_filters = [64, 128, 256, 512]
-model = vdcnn_model(num_filters=num_filters, num_classes=58, vocab_size=vocab_size,
+model = vdcnn_model(num_filters=num_filters, num_classes=17, vocab_size=vocab_size,
                     sequence_max_length=maxlen, embedding_dim=50)
 model.summary()
 """

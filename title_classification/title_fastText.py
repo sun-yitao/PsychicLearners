@@ -19,8 +19,8 @@ if __name__ == "__main__":
     train_data = os.path.join(psychic_learners_dir, 'data', 'train_split.txt')
     valid_data = os.path.join(psychic_learners_dir, 'data', 'valid_split.txt')
     model = train_supervised(
-        input=train_data, epoch=5, lr=0.1, dim=1000,# minn=1, maxn=6,
-        wordNgrams=2, verbose=2, minCount=15, ws=5, lrUpdateRate=100
+        input=train_data, epoch=5, lr=0.1, dim=100,# minn=1, maxn=6,
+        wordNgrams=2, verbose=2, ws=5, lrUpdateRate=100
 
     )
     correct = 0
