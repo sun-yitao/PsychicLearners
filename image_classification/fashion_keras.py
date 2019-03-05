@@ -8,7 +8,7 @@ from keras.layers import Dense, Input
 #from keras.applications.nasnet import NASNetLarge
 #from keras.applications.resnext import ResNeXt101
 from random_eraser import get_random_eraser
-from se_resnext import SEResNextImageNet
+from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
@@ -23,7 +23,7 @@ N_CLASSES = 14
 MODEL_NO = 1
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -47,16 +47,12 @@ if __name__ == '__main__':
 
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                   depth=[3, 4, 6, 3],
-                                   cardinality=32,
-                                   width=4,
-                                   weight_decay=5e-4,
-                                   include_top=False,
-                                   weights=None,
-                                   input_tensor=input_tensor,
-                                   pooling='avg',
-                                   classes=N_CLASSES)
+    base_model = SEInceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                     include_top=False,
+                                     weights=None,
+                                     input_tensor=input_tensor,
+                                     pooling='avg',
+                                     classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
