@@ -23,7 +23,7 @@ N_CLASSES = 14
 MODEL_NO = 1
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                   depth=[3, 4, 23, 3],
+                                   depth=[3, 4, 6, 3],
                                    cardinality=32,
                                    width=4,
                                    weight_decay=5e-4,

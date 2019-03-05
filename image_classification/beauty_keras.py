@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                   depth=[3, 4, 23, 3],
+                                   depth=[3, 4, 6, 3],
                                    cardinality=32,
                                    width=4,
                                    weight_decay=5e-4,
