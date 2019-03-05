@@ -17,13 +17,13 @@ TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
                          'image', 'v1_train_nodups_240x240', 'fashion')
 VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'fashion')
 CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'fashion')
-EPOCHS = 100  # only for calculation of decay
+EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 14
 MODEL_NO = 1
 LR_BASE = 10.0
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -31,9 +31,9 @@ if __name__ == '__main__':
     session = tf.Session(config=config)
     K.set_session(session)
     # input generators
-    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.2,
-                                       height_shift_range=0.2, brightness_range=(0.85, 1.15),
-                                       shear_range=0.0, zoom_range=0.3,
+    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+                                       height_shift_range=0.1, brightness_range=(0.85, 1.15),
+                                       shear_range=0.0, zoom_range=0.2,
                                        channel_shift_range=0.2,
                                        fill_mode='reflect', horizontal_flip=True,
                                        vertical_flip=False, rescale=1/255,
