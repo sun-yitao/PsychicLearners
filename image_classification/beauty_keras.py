@@ -21,7 +21,7 @@ EPOCHS = 200 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 MODEL_NO = 2
-LR_BASE = 0.01
+LR_BASE = 0.001
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 128
 
