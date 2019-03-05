@@ -3,18 +3,14 @@ import os
 import tensorflow as tf
 import keras
 from keras.layers import Dense, Input
-#from keras.applications.xception import Xception, preprocess_input
-#from keras.applications.inception_resnet_v2 import InceptionResNetV2
-#from keras.applications.nasnet import NASNetLarge
-#from keras.applications.resnext import ResNeXt101
 from random_eraser import get_random_eraser
-from se_resnext import SEResNextImageNet
+from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import multi_gpu_model
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
@@ -27,7 +23,7 @@ N_CLASSES = 27
 MODEL_NO = 1
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 
 class ModelMGPU(keras.models.Model):
     def __init__(self, ser_model, gpus):
@@ -67,16 +63,12 @@ if __name__ == '__main__':
 
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                   depth=[3, 4, 6, 3],
-                                   cardinality=32,
-                                   width=4,
-                                   weight_decay=5e-4,
-                                   include_top=False,
-                                   weights=None,
-                                   input_tensor=input_tensor,
-                                   pooling='avg',
-                                   classes=N_CLASSES)
+    base_model = SEInceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                     include_top=False,
+                                     weights=None,
+                                     input_tensor=input_tensor,
+                                     pooling='avg',
+                                     classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
@@ -94,7 +86,7 @@ if __name__ == '__main__':
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10,
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=7,
                                                   verbose=1, mode='auto',# min_delta=0.001,
                                                   cooldown=0, min_lr=0)
     log_dir = "logs_mobile/model_{}_{}".format(
