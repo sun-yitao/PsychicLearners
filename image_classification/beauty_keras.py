@@ -37,9 +37,9 @@ if __name__ == '__main__':
                                        shear_range=0.0, zoom_range=0.1,
                                        channel_shift_range=0.1,
                                        fill_mode='reflect', horizontal_flip=True,
-                                       vertical_flip=False, rescale=1/255)
-                                      # preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
-                                       #                                         v_l=0, v_h=255, pixel_level=True))
+                                       vertical_flip=False, rescale=1/255,
+                                       preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
+                                                                                v_l=0, v_h=255, pixel_level=True))
     valid_datagen = ImageDataGenerator(rescale=1/255)
     train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
