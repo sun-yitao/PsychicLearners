@@ -6,9 +6,9 @@ from keras.layers import Dense, Input
 #from keras.applications.xception import Xception, preprocess_input
 #from keras.applications.inception_resnet_v2 import InceptionResNetV2
 #from keras.applications.nasnet import NASNetLarge
-#from keras.applications.resnext import ResNeXt101
+from keras.applications.resnext import ResNeXt50
 from random_eraser import get_random_eraser
-from se_inception_resnet_v2 import SEInceptionResNetV2
+#from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 
@@ -20,7 +20,7 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 100 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
-MODEL_NO = 1
+MODEL_NO = 2
 LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = SEInceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+    base_model = ResNeXt50(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
                                     include_top=False,
                                     weights=None,
                                     input_tensor=input_tensor,
@@ -60,8 +60,8 @@ if __name__ == '__main__':
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
-                loss='categorical_crossentropy',
-                metrics=['accuracy'])
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
 
     # callbacks
     checkpoint_path = os.path.join(CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))

@@ -1,9 +1,11 @@
 import tarfile
 import os
+import time
 from glob import glob
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from shutil import copy, move
+from googletrans import Translator
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -39,9 +41,30 @@ def extract_tar_images():
             os.makedirs(output_dir, exist_ok=True)
         tf.extractall(path=output_dir)
 
+def translate_to_en(dataframe):
+    #translate train, valid and test titles to english on a new column
+    translator = Translator()
+    translated_df = dataframe.copy()
+    translations = []
+    for row in translated_df.itertuples():
+        try_no = 0
+        while True:
+            try:
+                translations.append(translator.translate(row[1]).text)
+            except:
+                try_no += 1
+                print('translation failed {}'.format(try_no))
+                time.sleep(try_no)
+                continue
+            break
+
+    translated_df.assign(translated_title=translations)
+    return translated_df
+
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
+    test.to_csv(os.path.join(data_directory, 'test_split.csv'), index=False)
 
     beauty_train = train.loc[(train['Category'] >= 0) & (train['Category'] <= 16)]
     beauty_valid = valid.loc[(valid['Category'] >= 0) & (valid['Category'] <= 16)]
@@ -124,6 +147,9 @@ def check_copied_images_correct():
 
 if __name__ == '__main__':
     #extract_tar_images()
+    train = translate_to_en(train)
+    valid = translate_to_en(valid)
+    test = translate_to_en(test)
     make_csvs()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
