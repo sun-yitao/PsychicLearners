@@ -9,9 +9,6 @@ from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import multi_gpu_model
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
                          'image', 'v1_train_nodups_240x240', 'mobile')
@@ -24,6 +21,9 @@ MODEL_NO = 1
 LR_BASE = 0.001
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
 class ModelMGPU(keras.models.Model):
     def __init__(self, ser_model, gpus):

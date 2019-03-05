@@ -23,7 +23,26 @@ N_CLASSES = 17
 MODEL_NO = 2
 LR_BASE = 0.001
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 64
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+
+class ModelMGPU(keras.models.Model):
+    def __init__(self, ser_model, gpus):
+        pmodel = multi_gpu_model(ser_model, gpus)
+        self.__dict__.update(pmodel.__dict__)
+        self._smodel = ser_model
+
+    def __getattribute__(self, attrname):
+        '''Override load and save methods to be used from the serial-model. The
+           serial-model holds references to the weights in the multi-gpu model.
+           '''
+        if 'load' in attrname or 'save' in attrname:
+           return getattr(self._smodel, attrname)
+        else:
+           #return Model.__getattribute__(self, attrname)
+           return super(ModelMGPU, self).__getattribute__(attrname)
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -56,6 +75,7 @@ if __name__ == '__main__':
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
+    model = ModelMGPU(model, 2)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9)#, nesterov=True)
     model.compile(optimizer=sgd,
