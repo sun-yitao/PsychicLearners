@@ -6,7 +6,7 @@ from keras.layers import Dense, Input
 #from keras.applications.xception import Xception, preprocess_input
 #from keras.applications.inception_resnet_v2 import InceptionResNetV2
 #from keras.applications.nasnet import NASNetLarge
-from keras.applications.resnext import ResNeXt50
+from keras.applications.resnet50 import ResNet50
 from random_eraser import get_random_eraser
 #from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
