@@ -6,7 +6,7 @@ from keras.layers import Dense, Input
 #from keras.applications.xception import Xception, preprocess_input
 #from keras.applications.inception_resnet_v2 import InceptionResNetV2
 #from keras.applications.nasnet import NASNetLarge
-from keras.applications.resnet50 import ResNet50
+from se_resnext import SEResNextImageNet
 from random_eraser import get_random_eraser
 #from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
@@ -21,7 +21,7 @@ EPOCHS = 100 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 MODEL_NO = 2
-LR_BASE = 0.1
+LR_BASE = 10.0
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 128
 
@@ -32,28 +32,31 @@ if __name__ == '__main__':
     K.set_session(session)
     # input generators
     #preprocessing function executes before rescale
-    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.2,
-                                       height_shift_range=0.2, brightness_range=(0.85, 1.15),
-                                       shear_range=0.0, zoom_range=0.3,
-                                       channel_shift_range=0.2,
+    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+                                       height_shift_range=0.1, brightness_range=(0.9, 1.1),
+                                       shear_range=0.0, zoom_range=0.1,
+                                       channel_shift_range=0.1,
                                        fill_mode='reflect', horizontal_flip=True,
-                                       vertical_flip=False, rescale=1/255, 
-                                       preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
-                                                                                v_l=0, v_h=255, pixel_level=True))
+                                       vertical_flip=False, rescale=1/255)
+                                      # preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
+                                       #                                         v_l=0, v_h=255, pixel_level=True))
     valid_datagen = ImageDataGenerator(rescale=1/255)
     train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
-
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = ResNet50(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                    include_top=False,
-                                    weights=None,
-                                    input_tensor=input_tensor,
-                                    pooling='avg',
-                                    classes=N_CLASSES)
+    base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                   depth=[3, 4, 6, 3],
+                                   cardinality=32,
+                                   width=4,
+                                   weight_decay=5e-4,
+                                   include_top=False,
+                                   weights=None,
+                                   input_tensor=input_tensor,
+                                   pooling='avg',
+                                   classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
