@@ -17,7 +17,7 @@ TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
                          'image', 'v1_train_nodups_240x240', 'beauty')
 VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'beauty')
 CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'beauty')
-EPOCHS = 100 # only for calculation of decay
+EPOCHS = 200 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 MODEL_NO = 2
