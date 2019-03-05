@@ -23,7 +23,7 @@ N_CLASSES = 17
 MODEL_NO = 2
 LR_BASE = 10.0
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
