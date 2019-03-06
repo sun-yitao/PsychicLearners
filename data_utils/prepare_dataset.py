@@ -1,11 +1,14 @@
 import tarfile
 import os
 import time
+import json
 from glob import glob
+from shutil import copy, move
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from shutil import copy, move
-from googletrans import Translator
+from sklearn.feature_extraction.text import CountVectorizer
+from google.cloud import translate
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -41,24 +44,43 @@ def extract_tar_images():
             os.makedirs(output_dir, exist_ok=True)
         tf.extractall(path=output_dir)
 
+translations_mapping = {}
+word_to_lang = {}
+def get_translations_dict():
+    # use google translate api to get a dict of translations mapping and save it for future use
+    translate_client = translate.Client()
+    target = 'en' # translate all to english
+    count_vect = CountVectorizer(
+        analyzer='word', strip_accents='unicode', token_pattern=r'\b[^\d\W]{3,}\b') #match words 3 of more letters
+    titles = pd.concat([test['title'], train_df['title']])
+    v = count_vect.fit(titles)
+    for word, count in v.vocabulary_.items():
+        #context_string = titles[titles.str.contains(word)].head(1).values[0]
+        result = translate_client.detect_language(word)
+        detected_language = result['language']
+        if detected_language != target:
+            translation = translate_client.translate(word, source_language=detected_language, target_language=target)
+            word_to_lang[word] = detected_language
+            if word != translation['translatedText']:
+                translations_mapping[word] = translation['translatedText']
+                print(detected_language, word, translation['translatedText'])
+    with open('translations_mapping.json', 'w') as file:
+        file.write(json.dumps(translations_mapping))
+    with open('word_to_lang.json', 'w') as file:
+        file.write(json.dumps(word_to_lang))
+
+def translate_sentence(sentence):
+    words = sentence.split(' ')
+    for n, word in enumerate(words):
+        if word in translations_mapping:
+            words[n] = translations_mapping[word]
+    return ' '.join(words)
+
 def translate_to_en(dataframe):
     #translate train, valid and test titles to english on a new column
-    translator = Translator()
+    #TODO load dict from json
     translated_df = dataframe.copy()
-    translations = []
-    for row in translated_df.itertuples():
-        try_no = 0
-        while True:
-            try:
-                translations.append(translator.translate(row[1]).text)
-            except:
-                try_no += 1
-                print('translation failed {}'.format(try_no))
-                time.sleep(try_no)
-                continue
-            break
-
-    translated_df.assign(translated_title=translations)
+    translated_df['translated_title'] = translated_df['title'].map(translate_sentence)
     return translated_df
 
 def make_csvs():
@@ -147,6 +169,7 @@ def check_copied_images_correct():
 
 if __name__ == '__main__':
     #extract_tar_images()
+    get_translations_dict()
     train = translate_to_en(train)
     valid = translate_to_en(valid)
     test = translate_to_en(test)

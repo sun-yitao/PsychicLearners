@@ -214,12 +214,12 @@ accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier
 print("RF, WordLevel TF-IDF: ", accuracy)"""
 params = {
     'max_depth': [9, 11, 13],
-    'learning_rate': [0.05, 0.1, 0.2],
-    'n_estimators': range(50, 200, 50),
-    'gamma': [i/10.0 for i in range(0, 5)],
-    'subsample': [i/10.0 for i in range(6, 10)],
-    'colsample_bytree': [i/10.0 for i in range(6, 10)],
-    'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05]
+    #'learning_rate': [0.05, 0.1, 0.2],
+    #'n_estimators': range(50, 200, 50),
+    #'gamma': [i/10.0 for i in range(0, 5)],
+    #'subsample': [i/10.0 for i in range(6, 10)],
+    #'colsample_bytree': [i/10.0 for i in range(6, 10)],
+    #'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05]
 }
 # Extereme Gradient Boosting on Count Vectors
 gridsearch = GridSearchCV(estimator=xgboost.XGBClassifier(max_depth=9, learning_rate=0.1, scale_pos_weight=1,

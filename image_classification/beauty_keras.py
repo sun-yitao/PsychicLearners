@@ -77,7 +77,7 @@ if __name__ == '__main__':
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
     model = ModelMGPU(model, 2)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
-    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9)#, nesterov=True)
+    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])

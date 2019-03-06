@@ -21,7 +21,7 @@ EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 14
 MODEL_NO = 1
-LR_BASE = 0.001
+LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 128
 
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
-    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
+    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9)# nesterov=True)
     model.compile(optimizer=sgd,
                 loss='categorical_crossentropy',
                 metrics=['accuracy'])
