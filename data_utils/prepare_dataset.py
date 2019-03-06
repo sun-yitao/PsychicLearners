@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from google.cloud import translate
+from tqdm import tqdm
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -38,7 +39,7 @@ train, valid = train_test_split(train_df,
 def extract_tar_images():
     # extract tarfiles in data directory to image directory
     tarfiles = glob(os.path.join(data_directory, '*.tar.gz'))
-    for t in tarfiles:
+    for t in tqdm(tarfiles):
         tf = tarfile.open(t)
         if not os.path.isdir(output_dir):
             os.makedirs(output_dir, exist_ok=True)
@@ -54,16 +55,24 @@ def get_translations_dict():
         analyzer='word', strip_accents='unicode', token_pattern=r'\b[^\d\W]{3,}\b') #match words 3 of more letters
     titles = pd.concat([test['title'], train_df['title']])
     v = count_vect.fit(titles)
-    for word, count in v.vocabulary_.items():
+    for word, count in tqdm(v.vocabulary_.items()):
         #context_string = titles[titles.str.contains(word)].head(1).values[0]
-        result = translate_client.detect_language(word)
+        try:
+            result = translate_client.detect_language(word)
+        except:
+            print('Error detecting {}'.format(word))
+            continue
         detected_language = result['language']
         if detected_language != target:
-            translation = translate_client.translate(word, source_language=detected_language, target_language=target)
+            try:
+                translation = translate_client.translate(word, source_language=detected_language, target_language=target)
+            except:
+                print('Error translating {}'.format(word))
+                continue
             word_to_lang[word] = detected_language
             if word != translation['translatedText']:
                 translations_mapping[word] = translation['translatedText']
-                print(detected_language, word, translation['translatedText'])
+                #print(detected_language, word, translation['translatedText'])
     with open('translations_mapping.json', 'w') as file:
         file.write(json.dumps(translations_mapping))
     with open('word_to_lang.json', 'w') as file:
@@ -115,13 +124,13 @@ def copy_images_to_image_dir():
     # copy the images to the respective categories, if low on disk space change to shutil.move
     # not well optimised takes forever to run
     print('Copying training images')
-    for row in train.itertuples():
+    for row in tqdm(train.itertuples()):
         copy(row[5], os.path.join(train_dir, str(row[3])))
     print('Copying validation images')
-    for row in valid.itertuples():
+    for row in tqdm(valid.itertuples()):
         copy(row[5], os.path.join(valid_dir, str(row[3])))
     print('Copying test images')
-    for row in test.itertuples():
+    for row in tqdm(test.itertuples()):
         copy(row[4], os.path.join(image_directory, 'test'))
 
     # This was added after it was officially confirmed that the 3 big categories can be used in prediction
