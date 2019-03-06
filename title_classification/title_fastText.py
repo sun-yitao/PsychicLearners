@@ -16,10 +16,10 @@ def print_results(N, p, r):
 
 if __name__ == "__main__":
     psychic_learners_dir = os.path.split(os.getcwd())[0]
-    train_data = os.path.join(psychic_learners_dir, 'data', 'fashion_train_split.txt')
-    valid_data = os.path.join(psychic_learners_dir, 'data', 'fashion_valid_split.txt')
+    train_data = os.path.join(psychic_learners_dir, 'data', 'beauty_train_split.txt')
+    valid_data = os.path.join(psychic_learners_dir, 'data', 'beauty_valid_split.txt')
     model = train_supervised(
-        input=train_data, epoch=50, lr=0.1, dim=10,
+        input=train_data, epoch=10, lr=0.1, dim=20,
         wordNgrams=4, verbose=2, ws=7, lrUpdateRate=100
 
     )

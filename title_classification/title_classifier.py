@@ -31,8 +31,8 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))
-train_x, train_y = train['title'], train['Category']
-valid_x, valid_y = valid['title'], valid['Category']
+train_x, train_y = train['translated_title'], train['Category']
+valid_x, valid_y = valid['translated_title'], valid['Category']
 """
 samplers = [
     ['Random_Undersample', RandomUnderSampler(random_state=RANDOM_STATE)],
@@ -59,21 +59,21 @@ valid_y = encoder.fit_transform(valid_y)
 
 # create a count vectorizer object
 count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10, #Stop words may not be needed as they seem to be already removed
-                             stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b')
-count_vect.fit(train['title'])
+                             stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b')
+count_vect.fit(train['translated_title'])
 
 # transform the training and validation data using count vectorizer object
 
 # word level tf-idf
 tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                             stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b')
-tfidf_vect.fit(train['title'])
+                             stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b')
+tfidf_vect.fit(train['translated_title'])
 
 # ngram level tf-idf
 tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                                   stop_words='english', token_pattern=u'(?ui)\\b\\w*[a-z]+\\w*\\b',
+                                   stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b',
                                    ngram_range=(1, 3))
-tfidf_vect_ngram.fit(train['title'])
+tfidf_vect_ngram.fit(train['translated_title'])
 
 """
 # load the pre-trained word-embedding vectors
@@ -85,7 +85,7 @@ for i, line in enumerate(open('crawl-300d-2M.vec')): #This for loop takes FOREVE
 
 # create a tokenizer
 token = text.Tokenizer()
-token.fit_on_texts(train['title'])
+token.fit_on_texts(train['translated_title'])
 word_index = token.word_index
 
 # convert text to sequence of tokens and pad them to ensure equal length vectors
@@ -101,8 +101,8 @@ for word, i in word_index.items():
     if embedding_vector is not None:
         embedding_matrix[i] = embedding_vector"""
 
-#train['char_count'] = train['title'].apply(len)
-#train['word_count'] = train['title'].apply(lambda x: len(x.split()))
+#train['char_count'] = train['translated_title'].apply(len)
+#train['word_count'] = train['translated_title'].apply(lambda x: len(x.split()))
 #train['word_density'] = train['char_count'] / (train['word_count']+1)
 """
 pos_family = {
@@ -126,11 +126,11 @@ def check_pos_tag(x, flag):
         pass
     return cnt
 
-train['noun_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'noun'))
-train['verb_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'verb'))
-train['adj_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'adj'))
-train['adv_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'adv'))
-train['pron_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'pron'))
+train['noun_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'noun'))
+train['verb_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'verb'))
+train['adj_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'adj'))
+train['adv_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'adv'))
+train['pron_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'pron'))
 
 # train a LDA Model
 lda_model = decomposition.LatentDirichletAllocation(
@@ -198,9 +198,9 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
                        train_x, train_y, valid_x)
 print("LR, N-Gram Vectors: ", accuracy)"""
 
-#accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.01)), 
-#                        train_x, train_y, valid_x)
-#print("SVM, N-Gram Vectors: ", accuracy)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.01)), 
+                        train_x, train_y, valid_x)
+print("SVM, N-Gram Vectors: ", accuracy)
 """
 # RF on Count Vectors
 
