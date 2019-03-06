@@ -21,7 +21,7 @@ EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 14
 MODEL_NO = 1
-LR_BASE = 0.1
+LR_BASE = 0.001
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 128
 
@@ -58,24 +58,32 @@ if __name__ == '__main__':
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9)# nesterov=True)
-    model.compile(optimizer=sgd,
-                loss='categorical_crossentropy',
-                metrics=['accuracy'])
-
+    
     # callbacks
     checkpoint_path = os.path.join(CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=7,
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5,
                                             verbose=1, mode='auto',# min_delta=0.001,
                                             cooldown=0, min_lr=0)
+    early_stopping = keras.callbacks.EarlyStopping(patience=5, verbose=1, restore_best_weights=True)
     log_dir = "logs_fashion/model_{}_{}".format(MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = keras.callbacks.TensorBoard(log_dir)
 
-    model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000, 
+    model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=100, 
+                        validation_data=valid, validation_steps=valid.n/valid.batch_size,
+                        callbacks=[ckpt, early_stopping, tensorboard])
+    
+    model.compile(optimizer=sgd,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000,
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
                         callbacks=[ckpt, reduce_lr, tensorboard])
