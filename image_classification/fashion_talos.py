@@ -11,6 +11,7 @@ from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess
 from keras.applications.nasnet import NASNetLarge
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
+from keras.utils import multi_gpu_model
 
 from random_eraser import get_random_eraser
 
@@ -22,6 +23,24 @@ EPOCHS = 100
 N_CLASSES = 14
 MODEL_NO = 3
 BATCH_SIZE = 64
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+class ModelMGPU(keras.models.Model):
+    def __init__(self, ser_model, gpus):
+        pmodel = multi_gpu_model(ser_model, gpus)
+        self.__dict__.update(pmodel.__dict__)
+        self._smodel = ser_model
+
+    def __getattribute__(self, attrname):
+        '''Override load and save methods to be used from the serial-model. The
+           serial-model holds references to the weights in the multi-gpu model.
+           '''
+        if 'load' in attrname or 'save' in attrname:
+           return getattr(self._smodel, attrname)
+        else:
+           #return Model.__getattribute__(self, attrname)
+           return super(ModelMGPU, self).__getattribute__(attrname)
 
 p = {
     # your parameter boundaries come here
@@ -105,6 +124,7 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
+    model = ModelMGPU(model, 2)
     for layer in model.layers[:params['freeze']]:
         layer.trainable = False
 
@@ -138,6 +158,7 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
 
 if __name__ == '__main__':
+    # workaround to feed data in batches instead of loading into memory as talos requires
     x, y, x_val, y_val = [np.array([1, 2]) for i in range(4)]
     h = ta.Scan(x, y,
                 params=p,
