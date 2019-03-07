@@ -6,11 +6,13 @@ from glob import glob
 from shutil import copy, move
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from google.cloud import translate
 from tqdm import tqdm
 from spellchecker import SpellChecker
+import multiprocessing as mp
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -114,17 +116,27 @@ wrong_words = set()
 def detect_spelling_mistake(sentence):
     words = sentence.split(' ')
     for word in words:
-        if word in wrong_words or word in correct_words: # word already checked
+        if word in wrong_words or word in correct_words or word in translations_mapping.keys(): # word already checked
             continue
         correction = spell.correction(word)
-        if correction != word and word not in translations_mapping.keys(): # if word is not english and spelt wrongly
+        if correction != word: # if word is not english and spelt wrongly
             spelling_errors.add((word, correction))
             wrong_words.add(word)
+            print(word)
         else: # if word is not english or is english and spelt correctly
             correct_words.add(word)
 
+
+def process(df):
+    res = df.map(detect_spelling_mistake)
+    return res
+
 def get_spelling_mistakes():
-    titles.map(detect_spelling_mistake)
+    cpus = mp.cpu_count()
+    p = mp.Pool(cpus)
+    p.map(process, np.array_split(titles, cpus))
+    p.close()
+    p.join()
     spelling_errors = list(spelling_errors)
     spelling_errors = [word + spell.correction(word) + '\n' for word in spelling_errors]
     with open('spelling_errors.txt', 'w') as f:

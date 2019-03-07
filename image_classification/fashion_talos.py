@@ -7,8 +7,8 @@ import tensorflow as tf
 import keras
 from keras import callbacks
 from keras.layers import *
-from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
-from keras.applications.nasnet import NASNetLarge
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.nasnet import NASNetLarge, preprocess_input
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import multi_gpu_model
@@ -44,7 +44,6 @@ class ModelMGPU(keras.models.Model):
 
 p = {
     # your parameter boundaries come here
-    'preprocess': ['rescale', 'preprocess'],
     #'image_size': [144, 196, 240],
     #'model': ['inception_resnet_v2', 'nasnet'], 
     #'learning_rate': [0.1, 0.01],
@@ -70,24 +69,13 @@ def input_model(x_train, y_train, x_val, y_val, params):
     # input generators
     #IMAGE_SIZE = (params['image_size'], params['image_size'])
     IMAGE_SIZE = (240, 240)
-    if params['preprocess'] == 'preprocess':
-        train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
-                                           height_shift_range=0.1, brightness_range=(0.85, 1.15),
-                                           shear_range=0.0, zoom_range=0.2,
-                                           channel_shift_range=0.2,
-                                           fill_mode='reflect', horizontal_flip=True,
-                                           vertical_flip=False, preprocessing_function=preprocess)
-        valid_datagen = ImageDataGenerator(preprocessing_function=preprocess)
-    else:
-        train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
-                                           height_shift_range=0.1, brightness_range=(0.85, 1.15),
-                                           shear_range=0.0, zoom_range=0.2,
-                                           channel_shift_range=0.2,
-                                           fill_mode='reflect', horizontal_flip=True,
-                                           vertical_flip=False, rescale=1/255,
-                                           preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
-                                                                                    v_l=0, v_h=255, pixel_level=True))
-        valid_datagen = ImageDataGenerator(rescale=1/255)
+    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+                                        height_shift_range=0.1, brightness_range=(0.85, 1.15),
+                                        shear_range=0.0, zoom_range=0.2,
+                                        channel_shift_range=0.2,
+                                        fill_mode='reflect', horizontal_flip=True,
+                                        vertical_flip=False, preprocessing_function=preprocess)
+    valid_datagen = ImageDataGenerator(preprocessing_function=preprocess)
 
     train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
                                                 color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
@@ -136,10 +124,10 @@ def input_model(x_train, y_train, x_val, y_val, params):
     for layer in model.layers[:params['freeze']]:
         layer.trainable = False
 
-    #LR_BASE = 0.01
+    LR_BASE = 0.1
     #decay = LR_BASE/(EPOCHS)
-    #sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
-    model.compile(optimizer='adam',
+    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
+    model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
