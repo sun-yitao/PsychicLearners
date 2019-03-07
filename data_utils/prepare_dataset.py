@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from google.cloud import translate
 from tqdm import tqdm
+from spellchecker import SpellChecker
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -99,6 +100,42 @@ def detect_weird_sentence(sentence):
         if word not in v.vocabulary_.keys():
             weird_words.add(word)
 
+def get_weird_sentences():
+    titles.map(detect_weird_sentence)
+    weird_words = list(weird_words)
+    weird_words = [word + '\n' for word in weird_words]
+    with open('weird_words.txt', 'w') as f:
+        f.writelines(weird_words)
+
+spell = SpellChecker()
+spelling_errors = set()
+correct_words = set()
+wrong_words = set()
+def detect_spelling_mistake(sentence):
+    words = sentence.split(' ')
+    for word in words:
+        if word in wrong_words or word in correct_words: # word already checked
+            continue
+        correction = spell.correction(word)
+        if correction != word and word not in translations_mapping.keys(): # if word is not english and spelt wrongly
+            spelling_errors.add((word, correction))
+            wrong_words.add(word)
+        else: # if word is not english or is english and spelt correctly
+            correct_words.add(word)
+
+def get_spelling_mistakes():
+    titles.map(detect_spelling_mistake)
+    spelling_errors = list(spelling_errors)
+    spelling_errors = [word + spell.correction(word) + '\n' for word in spelling_errors]
+    with open('spelling_errors.txt', 'w') as f:
+        f.writelines(spelling_errors)
+
+def combine_spelling_and_weird_txt():
+    #combine the 2 files into a single mapping
+    pass
+
+def clean_and_translate_title(sentence):
+    pass
 
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
@@ -185,18 +222,14 @@ def check_copied_images_correct():
     assert sorted(images) == sorted(original_images)
 
 if __name__ == '__main__':
-    #extract_tar_images()
-    #get_translations_dict()
-    """with open('translations_mapping.json', 'r') as f:
+    #extract_tar_images() 
+    #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
+    with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
-    train = translate_to_en(train)
+    """train = translate_to_en(train)
     valid = translate_to_en(valid)
     test = translate_to_en(test)
     make_csvs()"""
-    titles.map(detect_weird_sentence)
-    weird_words = list(weird_words)
-    weird_words = [word + '\n' for word in weird_words]
-    with open('weird_words.txt', 'w') as f:
-        f.writelines(list(weird_words))
+    get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()

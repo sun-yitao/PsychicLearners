@@ -51,8 +51,16 @@ p = {
     #'decay_factor': [1, 2, 5, 10, 100],
     #'momentum': [0.9, 0.95, 0.99],
     'deep_layers': [2, 3, 4],
-    'freeze_layers': [1039, 1004, 668]
+    'freeze_layers': [1039, 668, 497]
 }
+
+eraser = get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
+                           v_l=0, v_h=255, pixel_level=True)
+
+def preprocess(x):
+    x = eraser(x)
+    x = preprocess_input(x)
+    return x
 
 def input_model(x_train, y_train, x_val, y_val, params):
     config = tf.ConfigProto()
@@ -68,8 +76,8 @@ def input_model(x_train, y_train, x_val, y_val, params):
                                            shear_range=0.0, zoom_range=0.2,
                                            channel_shift_range=0.2,
                                            fill_mode='reflect', horizontal_flip=True,
-                                           vertical_flip=False, preprocessing_function=preprocess_input)
-        valid_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
+                                           vertical_flip=False, preprocessing_function=preprocess)
+        valid_datagen = ImageDataGenerator(preprocessing_function=preprocess)
     else:
         train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
                                            height_shift_range=0.1, brightness_range=(0.85, 1.15),
