@@ -1,8 +1,9 @@
 import os
 from PIL import Image
 from datetime import datetime
-import talos as ta
 
+import numpy as np
+import talos as ta
 import tensorflow as tf
 import keras
 from keras import callbacks
