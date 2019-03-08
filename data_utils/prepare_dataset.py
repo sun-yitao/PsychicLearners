@@ -12,7 +12,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from google.cloud import translate
 from tqdm import tqdm
 from spellchecker import SpellChecker
-import multiprocessing as mp
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -114,6 +113,7 @@ spelling_errors = set()
 correct_words = set()
 wrong_words = set()
 def detect_spelling_mistake(sentence):
+    global spelling_errors, correct_words, wrong_words
     words = sentence.split(' ')
     for word in words:
         if word in wrong_words or word in correct_words or word in translations_mapping.keys(): # word already checked
@@ -126,17 +126,8 @@ def detect_spelling_mistake(sentence):
         else: # if word is not english or is english and spelt correctly
             correct_words.add(word)
 
-
-def process(df):
-    res = df.map(detect_spelling_mistake)
-    return res
-
 def get_spelling_mistakes():
-    cpus = mp.cpu_count()
-    p = mp.Pool(cpus)
-    p.map(process, np.array_split(titles, cpus))
-    p.close()
-    p.join()
+    titles.map(detect_spelling_mistake)
     global spelling_errors
     spelling_errors = list(spelling_errors)
     spelling_errors = [word + spell.correction(word) + '\n' for word in spelling_errors]
