@@ -166,6 +166,6 @@ if __name__ == '__main__':
                 shuffle=False,
                 last_epoch_value=True,
                 print_params=True)
-    ta.Deploy(h, 'talos_nasnet_transfer_model_search')
+    ta.Deploy(h, 'talos_fashion_inception_resnet_transfer')
     print(h.data.head())
     print(h.details)

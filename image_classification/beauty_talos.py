@@ -1,34 +1,73 @@
 import os
 from PIL import Image
 from datetime import datetime
-import talos as ta
 
+import numpy as np
+import talos as ta
 import tensorflow as tf
 import keras
 from keras import callbacks
 from keras.layers import *
-from keras.applications.xception import Xception, preprocess_input
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.nasnet import NASNetLarge
-from keras.applications.resnext import ResNeXt50, ResNeXt101
+from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
+from keras.utils import multi_gpu_model
 
-TRAIN_DIR = os.path.join('..', 'data', 'image', 'v1_train_240x240', 'beauty')
-VAL_DIR = os.path.join('..', 'data', 'image', 'valid_240x240', 'beauty')
-CHECKPOINT_PATH = os.path.join('..', 'data', 'keras_checkpoints', 'beauty')
+from random_eraser import get_random_eraser
+
+psychic_learners_dir = os.path.split(os.getcwd())[0]
+TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
+                         'image', 'v1_train_nodups_240x240', 'beauty')
+VAL_DIR = os.path.join(psychic_learners_dir, 'data',
+                       'image', 'valid_240x240', 'beauty')
+CHECKPOINT_PATH = os.path.join(
+    psychic_learners_dir, 'data', 'keras_checkpoints', 'beauty')
 EPOCHS = 100
 N_CLASSES = 17
-MODEL_NO = 2
+MODEL_NO = 3
+BATCH_SIZE = 64
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
+
+class ModelMGPU(keras.models.Model):
+    def __init__(self, ser_model, gpus):
+        pmodel = multi_gpu_model(ser_model, gpus)
+        self.__dict__.update(pmodel.__dict__)
+        self._smodel = ser_model
+
+    def __getattribute__(self, attrname):
+        '''Override load and save methods to be used from the serial-model. The
+           serial-model holds references to the weights in the multi-gpu model.
+           '''
+        if 'load' in attrname or 'save' in attrname:
+           return getattr(self._smodel, attrname)
+        else:
+           #return Model.__getattribute__(self, attrname)
+           return super(ModelMGPU, self).__getattribute__(attrname)
+
 
 p = {
     # your parameter boundaries come here
-    'image_size': [100, 144, 196, 240],
-    'model': ['xception', 'inception_resnet_v2', 'nasnet', 'resnext101'], 
-    'learning_rate': [0.1, 0.5, 1.0],
+    #'image_size': [144, 196, 240],
+    #'model': ['inception_resnet_v2', 'nasnet'],
+    #'learning_rate': [0.1, 0.01],
     #'decay_factor': [1, 2, 5, 10, 100],
     #'momentum': [0.9, 0.95, 0.99],
+    'deep_layers': [2, 3, 4],
+    'freeze_layers': [339, 399]
 }
+
+eraser = get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
+                           v_l=0, v_h=255, pixel_level=True)
+
+
+def preprocess(x):
+    x = eraser(x)
+    x = preprocess_input(x)
+    return x
+
 
 def input_model(x_train, y_train, x_val, y_val, params):
     config = tf.ConfigProto()
@@ -36,83 +75,84 @@ def input_model(x_train, y_train, x_val, y_val, params):
     session = tf.Session(config=config)
     K.set_session(session)
     # input generators
-    if params['model'] == 'NASNetLarge':
-        batch_size = 64
-    else:
-        batch_size = 128
-    IMAGE_SIZE = (params['image_size'], params['image_size'])
-    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.2,
-                                       height_shift_range=0.2, brightness_range=(0.85, 1.15),
+    #IMAGE_SIZE = (params['image_size'], params['image_size'])
+    IMAGE_SIZE = (240, 240)
+    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+                                       height_shift_range=0.1, brightness_range=(0.85, 1.15),
                                        shear_range=0.0, zoom_range=0.2,
                                        channel_shift_range=0.2,
                                        fill_mode='reflect', horizontal_flip=True,
-                                       vertical_flip=False, rescale=1/255)
-    valid_datagen = ImageDataGenerator(rescale=1/255)
+                                       vertical_flip=False, preprocessing_function=preprocess)
+    valid_datagen = ImageDataGenerator(preprocessing_function=preprocess)
+
     train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
-                                              color_mode='rgb', batch_size=batch_size, interpolation='bicubic')
+                                              color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
-                                              color_mode='rgb', batch_size=batch_size, interpolation='bicubic')
+                                              color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
 
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    if params['model'] == 'xception':
-        base_model = Xception(include_top=False,
-                            weights=None,
-                            input_tensor=input_tensor,
-                            input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                            pooling='avg',
-                            classes=N_CLASSES)
-    elif params['model'] == 'inception_resnet_v2':
-        base_model = InceptionResNetV2(include_top=False,
-                                       weights=None,
-                                       input_tensor=input_tensor,
-                                       input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                      pooling='avg',
-                                       classes=N_CLASSES)
-    elif params['model'] == 'nasnet':
-        base_model = NASNetLarge(include_top=False,
-                                 weights=None,
-                                 input_tensor=input_tensor,
-                                 input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                 pooling='avg',
-                                 classes=N_CLASSES)
-    elif params['model'] == 'resnext101':
-        base_model = ResNeXt101(include_top=False,
-                                 weights=None,
-                                 input_tensor=input_tensor,
-                                 input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                 pooling='avg',
-                                 classes=N_CLASSES)
-    else:
-        base_model = ResNeXt50(include_top=False,
-                                weights=None,
-                                input_tensor=input_tensor,
-                                input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                pooling='avg',
-                                classes=N_CLASSES)
+    base_model = InceptionResNetV2(include_top=False,
+                                   weights='imagenet',
+                                   input_tensor=input_tensor,
+                                   input_shape=(
+                                       IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                   pooling=None,
+                                   classes=N_CLASSES)
 
     x = base_model.output
+    x = Flatten()(x)
+    x = Dense(64, kernel_initializer='he_normal',
+              kernel_regularizer=keras.regularizers.l2(1e-6))(x)
+    x = BatchNormalization()(x)
+    x = PReLU()(x)
+
+    x = Dropout(0.2)(x)
+    x = Dense(64, kernel_initializer='he_normal',
+              kernel_regularizer=keras.regularizers.l2(1e-6))(x)
+    x = BatchNormalization()(x)
+    x = PReLU()(x)
+
+    if params['deep_layers'] >= 3:
+        x = Dropout(0.2)(x)
+        x = Dense(64, kernel_initializer='he_normal',
+                  kernel_regularizer=keras.regularizers.l2(1e-6))(x)
+        x = BatchNormalization()(x)
+        x = PReLU()(x)
+
+    if params['deep_layers'] == 4:
+        x = Dropout(0.2)(x)
+        x = Dense(64, kernel_initializer='he_normal',
+                  kernel_regularizer=keras.regularizers.l2(1e-6))(x)
+        x = BatchNormalization()(x)
+        x = PReLU()(x)
+
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
+    for layer in model.layers[:params['freeze']]:
+        layer.trainable = False
 
-    LR_BASE = params['learning_rate']
+    LR_BASE = 0.1
     decay = LR_BASE/(EPOCHS)
-    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
+    sgd = keras.optimizers.SGD(
+        lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
 
     # callbacks
-    checkpoint_path = os.path.join(CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))
+    checkpoint_path = os.path.join(
+        CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=7,
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                             verbose=1, mode='auto', min_delta=0.001,
                                             cooldown=0, min_lr=0)
-    early_stopping = callbacks.EarlyStopping(monitor='val_acc', min_delta=0.001, patience=15)
-    log_dir = "logs/model_{}_{}_{}".format(MODEL_NO, params['model'], datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
+    early_stopping = callbacks.EarlyStopping(monitor='val_acc', min_delta=0.001, patience=10)
+    log_dir = "logs/model_{}_{}".format(MODEL_NO,
+                                        datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = callbacks.TensorBoard(log_dir)
@@ -125,6 +165,7 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
 
 if __name__ == '__main__':
+    # workaround to feed data in batches instead of loading into memory as talos requires
     x, y, x_val, y_val = [np.array([1, 2]) for i in range(4)]
     h = ta.Scan(x, y,
                 params=p,
@@ -137,9 +178,6 @@ if __name__ == '__main__':
                 shuffle=False,
                 last_epoch_value=True,
                 print_params=True)
-
-    # accessing the results data frame
+    ta.Deploy(h, 'talos_beauty_inception_resnet_transfer')
     print(h.data.head())
-    # get the highest result ('val_acc' by default)
-    print('Best accuracy: ', r.high())
-    ta.Deploy(h, 'talos_prelim_model_search')
+    print(h.details)
