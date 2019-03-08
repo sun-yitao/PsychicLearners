@@ -129,7 +129,7 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
-    for layer in model.layers[:params['freeze']]:
+    for layer in model.layers[:params['freeze_layers']]:
         layer.trainable = False
 
     LR_BASE = 0.1
