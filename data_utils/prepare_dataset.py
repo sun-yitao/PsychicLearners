@@ -89,7 +89,7 @@ def translate_sentence(sentence):
             words[n] = translations_mapping[word]
     return ' '.join(words)
 
-def translate_to_en(dataframe):
+def translate_df(dataframe):
     #translate train, valid and test titles to english on a new column
     translated_df = dataframe.copy()
     translated_df['translated_title'] = translated_df['title'].map(translate_sentence)
@@ -137,6 +137,7 @@ def get_spelling_mistakes():
     p.map(process, np.array_split(titles, cpus))
     p.close()
     p.join()
+    global spelling_errors
     spelling_errors = list(spelling_errors)
     spelling_errors = [word + spell.correction(word) + '\n' for word in spelling_errors]
     with open('spelling_errors.txt', 'w') as f:
@@ -144,10 +145,43 @@ def get_spelling_mistakes():
 
 def combine_spelling_and_weird_txt():
     #combine the 2 files into a single mapping
-    pass
+    misspelt_mappings = {}
+    misspelt_words = set()
+    with open('spelling_errors.txt', 'r') as f:
+        for line in f.readlines():
+            line = line.replace('\n', '')
+            misspelt, correction = line.split(' ')
+            misspelt_mappings[misspelt] = correction
+            misspelt_words.add(misspelt)
+    with open('weird_words.txt', 'r') as f:
+        lines = f.readlines()
+        lines = [line.replace('\n', '') for line in lines]
+        weird_words = set(lines)
+    diff = weird_words.difference(misspelt_words) # get words in weird words that are not in misspelt words
+    for word in diff:
+        misspelt_mappings[word] = 'WEIRD'
+    with open('misspelt_and_weird_mappings.json', 'w') as file:
+        file.write(json.dumps(misspelt_mappings))
+        
+        
 
-def clean_and_translate_title(sentence):
-    pass
+def clean_and_translate_df(dataframe):
+    translated_df = dataframe.copy()
+    translated_df['translated_title'] = translated_df['title'].map(translate_sentence)
+    translated_df['clean_translated_title'] = translated_df['translated_title'].map(clean_sentence)
+    return translated_df
+
+def clean_df(dataframe):
+    cleaned_df = dataframe.copy()
+    clean_df['cleaned_title'] = cleaned_df['title'].map(clean_sentence)
+    return cleaned_df
+
+def clean_sentence(sentence):
+    words = sentence.split(' ')
+    for n, word in enumerate(words):
+        if word in misspelt_mappings:
+            words[n] = misspelt_mappings[word]
+    return ' '.join(words)
 
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
@@ -238,9 +272,11 @@ if __name__ == '__main__':
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
-    """train = translate_to_en(train)
-    valid = translate_to_en(valid)
-    test = translate_to_en(test)
+    #with open('misspelt_and_weird_mappings.json', 'r') as f:
+    #    misspelt_mappings = json.load(f)
+    """train = clean_and_translate_df(train)
+    valid = clean_and_translate_df(valid)
+    test = clean_and_translate_df(test)
     make_csvs()"""
     get_spelling_mistakes()
     #copy_images_to_image_dir()
