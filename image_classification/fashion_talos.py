@@ -7,8 +7,7 @@ import tensorflow as tf
 import keras
 from keras import callbacks
 from keras.layers import *
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.nasnet import NASNetLarge, preprocess_input
+from keras.applications.inception_resnet_v2 import InceptionResNetV2, preprocess_input
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import multi_gpu_model
@@ -25,7 +24,7 @@ MODEL_NO = 3
 BATCH_SIZE = 64
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 class ModelMGPU(keras.models.Model):
     def __init__(self, ser_model, gpus):
         pmodel = multi_gpu_model(ser_model, gpus)
@@ -50,7 +49,7 @@ p = {
     #'decay_factor': [1, 2, 5, 10, 100],
     #'momentum': [0.9, 0.95, 0.99],
     'deep_layers': [2, 3, 4],
-    'freeze_layers': [1039, 668, 497]
+    'freeze_layers': [339, 399]
 }
 
 eraser = get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
@@ -84,12 +83,12 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = NASNetLarge(include_top=False,
-                             weights='imagenet',
-                             input_tensor=input_tensor,
-                             input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                             pooling=None,
-                             classes=N_CLASSES)
+    base_model = InceptionResNetV2(include_top=False,
+                                   weights='imagenet',
+                                   input_tensor=input_tensor,
+                                   input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                   pooling=None,
+                                   classes=N_CLASSES)
 
     x = base_model.output
     x = Flatten()(x)
@@ -120,12 +119,11 @@ def input_model(x_train, y_train, x_val, y_val, params):
 
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
-    model = ModelMGPU(model, 2)
     for layer in model.layers[:params['freeze']]:
         layer.trainable = False
 
     LR_BASE = 0.1
-    #decay = LR_BASE/(EPOCHS)
+    decay = LR_BASE/(EPOCHS)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
@@ -137,7 +135,7 @@ def input_model(x_train, y_train, x_val, y_val, params):
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5,
+    reduce_lr = callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                             verbose=1, mode='auto', min_delta=0.001,
                                             cooldown=0, min_lr=0)
     early_stopping = callbacks.EarlyStopping(monitor='val_acc', min_delta=0.001, patience=10)
