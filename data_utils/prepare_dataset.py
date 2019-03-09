@@ -130,7 +130,7 @@ def get_spelling_mistakes():
     titles.map(detect_spelling_mistake)
     global spelling_errors
     spelling_errors = list(spelling_errors)
-    spelling_errors = [word + spell.correction(word) + '\n' for word in spelling_errors]
+    spelling_errors = [word + correction + '\n' for (word,correction) in spelling_errors]
     with open('spelling_errors.txt', 'w') as f:
         f.writelines(spelling_errors)
 

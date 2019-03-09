@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-from fastText import train_supervised
+from fastText import train_supervised, train_unsupervised
 import numpy as np
 
 
@@ -18,10 +18,13 @@ if __name__ == "__main__":
     psychic_learners_dir = os.path.split(os.getcwd())[0]
     train_data = os.path.join(psychic_learners_dir, 'data', 'beauty_train_split.txt')
     valid_data = os.path.join(psychic_learners_dir, 'data', 'beauty_valid_split.txt')
+    u_model = train_unsupervised(train_data, model = 'skipgram', lr = 0.05, dim = 15, ws = 5, 
+        epoch = 5, neg = 5, wordNgrams = 4, loss = 'ns', bucket = 2000000,
+        lrUpdateRate = 100, t = 0.0001, label = '__label__', verbose = 2, pretrainedVectors = '')
+    u_model.save_model("fil9.vec")
     model = train_supervised(
-        input=train_data, epoch=10, lr=0.1, dim=20,
-        wordNgrams=4, verbose=2, ws=7, lrUpdateRate=100
-
+        input=train_data, epoch=5, lr=0.1, dim=300,
+        wordNgrams=4, verbose=2, ws=5, lrUpdateRate=100, pretrainedVectors='crawl-300d-2M.vec'
     )
     correct = 0
     total = 0
