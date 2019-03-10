@@ -14,19 +14,18 @@ from keras import backend as K
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
-                         'image', 'v1_train_240x240', 'beauty')
+                         'image', 'v1_train_nodups_240x240', 'beauty')
 VAL_DIR = os.path.join(psychic_learners_dir, 'data', 'image', 'valid_240x240', 'beauty')
 CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints', 'beauty')
 EPOCHS = 200 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 MODEL_NO = 5
-LR_BASE = 0.01
+LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
-
+BATCH_SIZE = 64
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 
@@ -37,10 +36,10 @@ if __name__ == '__main__':
     K.set_session(session)
     # input generators
     #preprocessing function executes before rescale
-    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+    train_datagen = ImageDataGenerator(rotation_range=0, width_shift_range=0.1,
                                        height_shift_range=0.1, brightness_range=(0.9, 1.1),
                                        shear_range=0.0, zoom_range=0.1,
-                                       channel_shift_range=0.1,
+                                       channel_shift_range=0.2,
                                        fill_mode='reflect', horizontal_flip=True,
                                        vertical_flip=False, rescale=1/255,
                                        preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,

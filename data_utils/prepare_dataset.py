@@ -141,7 +141,7 @@ def combine_spelling_and_weird_txt():
     with open('spelling_errors.txt', 'r') as f:
         for line in f.readlines():
             line = line.replace('\n', '')
-            misspelt, correction = line.split(' ')
+            misspelt, correction = line.split(',')
             misspelt_mappings[misspelt] = correction
             misspelt_words.add(misspelt)
     with open('weird_words.txt', 'r') as f:
@@ -263,6 +263,7 @@ if __name__ == '__main__':
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
+    combine_spelling_and_weird_txt()
     #with open('misspelt_and_weird_mappings.json', 'r') as f:
     #    misspelt_mappings = json.load(f)
     """train = clean_and_translate_df(train)

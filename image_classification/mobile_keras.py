@@ -17,29 +17,14 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 27
-MODEL_NO = 1
-LR_BASE = 0.001
+MODEL_NAME = 'se_inceptionres'
+LR_BASE = 0.1
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-class ModelMGPU(keras.models.Model):
-    def __init__(self, ser_model, gpus):
-        pmodel = multi_gpu_model(ser_model, gpus)
-        self.__dict__.update(pmodel.__dict__)
-        self._smodel = ser_model
-
-    def __getattribute__(self, attrname):
-        '''Override load and save methods to be used from the serial-model. The
-           serial-model holds references to the weights in the multi-gpu model.
-           '''
-        if 'load' in attrname or 'save' in attrname:
-           return getattr(self._smodel, attrname)
-        else:
-           #return Model.__getattribute__(self, attrname)
-           return super(ModelMGPU, self).__getattribute__(attrname)
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -47,10 +32,10 @@ if __name__ == '__main__':
     session = tf.Session(config=config)
     K.set_session(session)
     # input generators
-    train_datagen = ImageDataGenerator(rotation_range=5, width_shift_range=0.1,
+    train_datagen = ImageDataGenerator(rotation_range=0, width_shift_range=0.1,
                                        height_shift_range=0.1, brightness_range=(0.9, 1.1),
                                        shear_range=0.0, zoom_range=0.2,
-                                       channel_shift_range=0.2,
+                                       channel_shift_range=0.0,
                                        fill_mode='reflect', horizontal_flip=True,
                                        vertical_flip=False, rescale=1/255,
                                        preprocessing_function=get_random_eraser(p=0.8, s_l=0.02, s_h=0.4, r_1=0.3, r_2=1/0.3,
@@ -72,7 +57,6 @@ if __name__ == '__main__':
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)
-    model = ModelMGPU(model, 2)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
@@ -81,7 +65,7 @@ if __name__ == '__main__':
 
     # callbacks
     checkpoint_path = os.path.join(
-        CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))
+        CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NAME))
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
@@ -90,7 +74,7 @@ if __name__ == '__main__':
                                                   verbose=1, mode='auto',# min_delta=0.001,
                                                   cooldown=0, min_lr=0)
     log_dir = "logs_mobile/model_{}_{}".format(
-        MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
+        MODEL_NAME, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = keras.callbacks.TensorBoard(log_dir)
