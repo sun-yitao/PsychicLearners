@@ -270,6 +270,6 @@ if __name__ == '__main__':
     valid = clean_and_translate_df(valid)
     test = clean_and_translate_df(test)
     make_csvs()"""
-    get_spelling_mistakes()
+    #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
