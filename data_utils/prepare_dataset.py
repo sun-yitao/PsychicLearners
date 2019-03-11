@@ -41,9 +41,9 @@ def _image_filename_path_writer(filename, category):
     return abs_path
 
 train_df = pd.read_csv(os.path.join(data_directory, 'train.csv'))
-train_df['abs_image_path'] = train_df[['image_path', 'Category']].map(_image_filename_path_writer)
+train_df['abs_image_path'] = train_df.apply(
+    lambda x: _image_filename_path_writer(x['image_path'], x['Category']), axis=1)
 test = pd.read_csv(os.path.join(data_directory, 'test.csv'))
-test['abs_image_path'] = test[['image_path', 'Category']].map(_image_filename_path_writer)
 # Use StratifiedShuffleSplit to split images and train.csv into training and validation sets
 # Stratification ensures that both splits do not have missing categories
 train, valid = train_test_split(train_df,
@@ -166,7 +166,23 @@ def combine_spelling_and_weird_txt():
         misspelt_mappings[word] = 'WEIRD'
     with open('misspelt_and_weird_mappings.json', 'w') as file:
         file.write(json.dumps(misspelt_mappings))
-        
+
+def filter_numeric_from_misspelt_and_weird_json():
+    def _hasNumbers(inputString):
+        return any(char.isdigit() for char in inputString)
+    numeric = {}
+    alphabetic = {}
+    with open('misspelt_and_weird_mappings.json', 'r') as f:
+        misspelt_mappings = json.load(f)
+        for key, value in misspelt_mappings.items():
+            if _hasNumbers(key):
+                numeric[key] = value
+            else:
+                alphabetic[key] = value
+    with open('numeric_misspelt_and_weird_mappings.json', 'w') as file:
+        file.write(json.dumps(numeric))
+    with open('alphabetic_misspelt_and_weird_mappings.json', 'w') as file:
+        file.write(json.dumps(alphabetic))
         
 
 def clean_and_translate_df(dataframe):
@@ -281,6 +297,7 @@ def check_copied_images_correct():
 if __name__ == '__main__':
     #extract_tar_images() 
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
+    filter_numeric_from_misspelt_and_weird_json()
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
     with open('misspelt_and_weird_mappings.json', 'r') as f:
