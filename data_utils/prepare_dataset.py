@@ -22,16 +22,28 @@ output_dir = os.path.join(image_directory, 'original')
 train_dir = os.path.join(image_directory, 'v1_train_240x240')
 valid_dir = os.path.join(image_directory, 'valid_240x240')
 
-def _image_filename_path_writer(filename):
-    abs_path = os.path.join(output_dir, filename)
+mobile_categories = [35, 53, 40, 39, 52, 45, 31, 51, 49, 56, 38,
+                        34, 46, 33, 57, 37, 55, 32, 42, 44, 50, 36, 43, 54, 41, 47, 48]
+fashion_categories = [23, 27, 18, 20, 24, 22, 19, 26, 25, 29, 28, 17, 21, 30]
+beauty_categories = [1, 0, 7, 14, 2, 8, 5, 4, 13, 11, 15, 3, 10, 9, 6, 16, 12]
+def _image_filename_path_writer(filename, category):
+    if category in beauty_categories:
+        big_category = 'beauty'
+    elif category in  fashion_categories:
+        big_category = 'fashion'
+    elif category in mobile_categories:
+        big_category = 'mobile'
+    else:
+        raise ValueError(f'Invalid Category {category}')
+    abs_path = os.path.join(big_category, str(category), filename)
     if not abs_path.endswith('.jpg'):
         abs_path += '.jpg'
     return abs_path
 
 train_df = pd.read_csv(os.path.join(data_directory, 'train.csv'))
-train_df['abs_image_path'] = train_df['image_path'].map(_image_filename_path_writer)
+train_df['abs_image_path'] = train_df[['image_path', 'Category']].map(_image_filename_path_writer)
 test = pd.read_csv(os.path.join(data_directory, 'test.csv'))
-test['abs_image_path'] = test['image_path'].map( _image_filename_path_writer)
+test['abs_image_path'] = test[['image_path', 'Category']].map(_image_filename_path_writer)
 # Use StratifiedShuffleSplit to split images and train.csv into training and validation sets
 # Stratification ensures that both splits do not have missing categories
 train, valid = train_test_split(train_df,
@@ -174,7 +186,7 @@ def clean_sentence(sentence):
             words[n] = misspelt_mappings[word]
     return ' '.join(words)
 
-def make_csvs():
+def make_csvs(change_image_abs_path=True):
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
     test.to_csv(os.path.join(data_directory, 'test_split.csv'), index=False)
@@ -221,10 +233,6 @@ def copy_images_to_image_dir():
     train_category_directories = [dir for dir in train_category_directories if os.path.isdir(dir)]
     valid_category_directories = glob(os.path.join(valid_dir, '*'))
     valid_category_directories = [dir for dir in valid_category_directories if os.path.isdir(dir)]
-    mobile_categories = [35, 53, 40, 39, 52, 45, 31, 51, 49, 56, 38,
-                        34, 46, 33, 57, 37, 55, 32, 42, 44, 50, 36, 43, 54, 41, 47, 48]
-    fashion_categories = [23, 27, 18, 20, 24, 22, 19, 26, 25, 29, 28, 17, 21, 30]
-    beauty_categories = [1, 0, 7, 14, 2, 8, 5, 4, 13, 11, 15, 3, 10, 9, 6, 16, 12]
 
     def move_directory_to_big_category(small_category_directory):
         dst, category_number = os.path.split(small_category_directory)

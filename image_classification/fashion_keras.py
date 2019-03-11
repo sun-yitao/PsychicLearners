@@ -46,12 +46,12 @@ if __name__ == '__main__':
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
-    class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.labels)
+    class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
     # model
     input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     base_model = InceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
                                    include_top=False,
-                                   weights=None,
+                                   weights='imagenet',
                                    input_tensor=input_tensor,
                                    pooling='avg',
                                    classes=N_CLASSES)

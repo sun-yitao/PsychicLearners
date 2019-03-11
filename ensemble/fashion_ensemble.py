@@ -16,8 +16,9 @@ K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / 'fashion' / 'MODEL NAME')
-TRAIN_DIR = str(psychic_learners_dir / 'data' / 'image' / 'v1_train_240x240' / 'fashion')
-VAL_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / 'fashion')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / 'fashion_train_split.csv')
+VALID_CSV = str(psychic_learners_dir / 'data' / 'fashion_valid_split.csv')
+IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240')
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 14
 BATCH_SIZE = 64
