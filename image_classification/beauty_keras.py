@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import numpy as np
 import tensorflow as tf
 import keras
 from keras.layers import Dense, Input
@@ -11,6 +12,7 @@ from random_eraser import get_random_eraser
 #from se_inception_resnet_v2 import SEInceptionResNetV2
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
+from sklearn.utils.class_weight import compute_class_weight
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
@@ -20,7 +22,7 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
-MODEL_NAME = 'inceptionres_imagenet'
+MODEL_NAME = 'inceptionres_imagenet_classweights'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
@@ -49,6 +51,7 @@ if __name__ == '__main__':
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
+    class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     base_model = InceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
@@ -82,4 +85,4 @@ if __name__ == '__main__':
 
     model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000, 
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
-                        callbacks=[ckpt, reduce_lr, tensorboard])
+                        callbacks=[ckpt, reduce_lr, tensorboard], class_weight=class_weights)
