@@ -18,7 +18,7 @@ EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 27
 MODEL_NAME = 'se_inceptionres'
-LR_BASE = 0.1
+LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
 

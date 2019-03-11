@@ -20,8 +20,8 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200 # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
-MODEL_NO = 5
-LR_BASE = 0.1
+MODEL_NAME = 'se_inceptionres'
+LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                   metrics=['accuracy'])
 
     # callbacks
-    checkpoint_path = os.path.join(CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NO))
+    checkpoint_path = os.path.join(CHECKPOINT_PATH, 'model_{}_checkpoints'.format(MODEL_NAME))
     if not os.path.isdir(checkpoint_path):
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=7,
                                             verbose=1, mode='auto', #min_delta=0.001,
                                             cooldown=0, min_lr=0)
-    log_dir = "logs_beauty/model_{}_{}".format(MODEL_NO, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
+    log_dir = "logs_beauty/model_{}_{}".format(MODEL_NAME, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = keras.callbacks.TensorBoard(log_dir)
