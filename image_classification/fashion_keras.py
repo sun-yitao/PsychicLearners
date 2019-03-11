@@ -67,7 +67,7 @@ if __name__ == '__main__':
         os.makedirs(checkpoint_path)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
-    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=7,
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                             verbose=1, mode='auto',# min_delta=0.001,
                                             cooldown=0, min_lr=0)
     #early_stopping = keras.callbacks.EarlyStopping(patience=5, verbose=1, restore_best_weights=True)
