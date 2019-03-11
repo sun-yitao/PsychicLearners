@@ -1,16 +1,26 @@
 python run_classifier.py \
-  --task_name=fashion \
+  --task_name=beauty \
   --do_train=true \
   --do_eval=true \
-  --do_lower_case=False \
+  --do_lower_case=True \
   --do_print_test=True \
-  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/fashion \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/beauty \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/exp_3/model.ckpt-17164 \
+  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
   --max_seq_length=15 \
   --train_batch_size=512 \
-  --eval_batch_size=64 \
-  --learning_rate=0.0002 \
-  --num_train_epochs=60.0 \
-  --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/exp_3
+  --eval_batch_size=512 \
+  --learning_rate=0.00005 \
+  --num_train_epochs=50.0 \
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_exp1
+
+python extract_features.py \
+  --input_file=/home/paperspace/PsychicLearners/data/fashion_train_sentences.txt \
+  --output_file=/home/paperspace/PsychicLearners/data/fashion_train_features.jsonl \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/exp_6/model.ckpt-6865 \
+  --layers=-1 \
+  --max_seq_length=15 \
+  --batch_size=512

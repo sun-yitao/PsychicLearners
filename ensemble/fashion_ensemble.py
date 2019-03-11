@@ -1,11 +1,12 @@
 import os
 from multiprocessing import cpu_count
 
+from PIL import Image
 import pandas as pd
 import numpy as np
 from pathlib import Path
 import keras
-from keras_preprocessing.image import ImageDataGenerator
+from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
 
@@ -15,60 +16,69 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / 'fashion' / 'MODEL NAME')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / 'fashion_train_split.csv')
-VALID_CSV = str(psychic_learners_dir / 'data' / 'fashion_valid_split.csv')
-IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240')
+BIG_CATEGORY = 'fashion'
+IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'MODEL NAME')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
+VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
+TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
+IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'train_240x240')
+FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 14
 BATCH_SIZE = 64
 model = keras.models.load_model(IMAGE_MODEL_PATH)
 model = model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
+print(model.summary())
 
-train_datagen = ImageDataGenerator(rescale=1/255)
-valid_datagen = ImageDataGenerator(rescale=1/255)
-train = train_datagen.flow_from_directory(TRAIN_DIR, target_size=IMAGE_SIZE,
-                                          color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
-valid = valid_datagen.flow_from_directory(VAL_DIR, target_size=IMAGE_SIZE,
-                                          color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
-train_steps = len(train)
-valid_steps = len(valid)
-def get_train_image_features():
-    train_img_features = model.predict_generator(train, steps=train_steps, callbacks=None,
-                                       max_queue_size=10, workers=cpu_count(), 
-                                       use_multiprocessing=True, verbose=1)
-    np.savetxt('train_img_features.gz', train_img_features)
-
-def get_valid_image_features():
-    valid_img_features = model.predict_generator(valid, steps=valid_steps, callbacks=None,
-                                       max_queue_size=10, workers=cpu_count(),
-                                       use_multiprocessing=True, verbose=1)
-    np.savetxt('valid_img_features.gz', valid_img_features)
-
-def load_train_features():
-    train_img_features = np.loadtxt('train_img_features.gz')
-    print(train_img_features.shape)
-    train_bert_features = np.loadtxt()
-    print(train_bert_features.shape)
-    return train_img_features, train_bert_features
-
-def load_valid_features():
-    valid_image_features = np.loadtxt('valid_img_features.gz')
-    print(valid_image_features.shape)
-    valid_bert_features = np.loadtxt()
-    print(valid_bert_features.shape)
-    return valid_image_features, valid_bert_features
+def save_image_features(features, itemids):
+    for feature, itemid in zip(features, itemids):
+        output_path = str(FEATURES_DIR / f'{itemid}_image_feature.npy')
+        np.save(output_path, feature)
 
 
-class TrainDataGenerator(keras.utils.Sequence):
-    def __init__(self, x, y, batch_size=64, dim=(32, 32, 32), n_channels=1,
+def extract_and_save_text_features(titles, itemid_array):
+    #TODO
+    pass
+
+
+def get_features(csv, test=False):
+    train = pd.read_csv(csv)
+    steps = len(train) / BATCH_SIZE
+    for batch in np.array_split(train, steps):
+        np_image_array = np.empty(BATCH_SIZE, IMAGE_SIZE[0], IMAGE_SIZE[1], 3)
+        itemid_array = []
+        titles = []
+        for n, row in enumerate(batch.itertuples()):
+            itemid = row[1]
+            title = row[2]
+            if test:
+                image_path = row[4]
+            else:
+                #category = row[3]
+                image_path = row[5]
+            itemid.append(itemid)
+            titles.append(title)
+            im = Image.open(os.path.join(IMAGE_DIR, image_path))
+            np_image_array[n] = img_to_array(im)
+
+        image_features = model.predict(np_image_array, batch_size=len(batch))
+        save_image_features(image_features, itemid_array)
+        extract_and_save_text_features(titles, itemid_array)
+
+
+
+
+class DataGenerator(keras.utils.Sequence):
+    #TODO change dims
+    # train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
+    """x: itemid y:category sparse"""
+    def __init__(self, x, y, batch_size=64, dim=(32, 32, 32),
                  n_classes=N_CLASSES, shuffle=True):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
         self.y = y
         self.x = x
-        self.n_channels = n_channels
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -80,13 +90,13 @@ class TrainDataGenerator(keras.utils.Sequence):
     def __getitem__(self, index):
         'Generate one batch of data'
         # Generate indexes of the batch
-        indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
+        batch_indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
 
         # Find list of IDs
-        x_temp = [self.x[i] for i in indexes]
+        x_temp = [self.x[i] for i in batch_indexes]
 
         # Generate data
-        X, y = self.__data_generation(x_temp) # may not need this step
+        X, y = self.__data_generation(x_temp)
 
         return X, y
 
@@ -100,19 +110,28 @@ class TrainDataGenerator(keras.utils.Sequence):
         # X : (n_samples, *dim, n_channels)
         'Generates data containing batch_size samples'
         # Initialization
-        X = np.empty((self.batch_size, *self.dim, self.n_channels))
+        X = np.empty((self.batch_size, *self.dim))
         y = np.empty((self.batch_size), dtype=int)
 
         # Generate data
         for i, ID in enumerate(x_temp):
             # Store sample
-            X[i, ] = np.load('data/' + ID + '.npy')
-
+            image_feature = np.load(str(FEATURES_DIR / f'{ID}_image_feature.npy'))
+            text_feature = np.load(str(FEATURES_DIR / f'{ID}_text_feature.npy'))
+            combined = np.concatenate((image_feature, text_feature), axis=None)
+            print(combined.shape)
+            X[i, ] = combined
             # Store class
             y[i] = self.y[ID]
 
         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
 
+def ensemble_model():
+    #TODO returns model
+    pass
+
 if __name__ == '__main__':
-    get_train_image_features()
-    get_valid_image_features()
+    get_features(TRAIN_CSV)
+    get_features(VALID_CSV)
+    get_features(TEST_CSV, test=True)
+    #get_valid_features()

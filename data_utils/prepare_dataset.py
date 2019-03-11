@@ -9,9 +9,9 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
-from google.cloud import translate
+from google.cloud import translate #optional
 from tqdm import tqdm
-from spellchecker import SpellChecker
+from spellchecker import SpellChecker #optional
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -115,6 +115,7 @@ def detect_weird_sentence(sentence):
 
 def get_weird_sentences():
     titles.map(detect_weird_sentence)
+    global weird_words
     weird_words = list(weird_words)
     weird_words = [word + '\n' for word in weird_words]
     with open('weird_words.txt', 'w') as f:
@@ -170,13 +171,13 @@ def combine_spelling_and_weird_txt():
 
 def clean_and_translate_df(dataframe):
     translated_df = dataframe.copy()
-    translated_df['translated_title'] = translated_df['title'].map(translate_sentence)
-    translated_df['clean_translated_title'] = translated_df['translated_title'].map(clean_sentence)
+    translated_df['clean_title'] = translated_df['title'].map(clean_sentence)
+    translated_df['clean_translated_title'] = translated_df['clean_title'].map(translate_sentence)
     return translated_df
 
 def clean_df(dataframe):
     cleaned_df = dataframe.copy()
-    clean_df['cleaned_title'] = cleaned_df['title'].map(clean_sentence)
+    cleaned_df['cleaned_title'] = cleaned_df['title'].map(clean_sentence)
     return cleaned_df
 
 def clean_sentence(sentence):
@@ -186,25 +187,36 @@ def clean_sentence(sentence):
             words[n] = misspelt_mappings[word]
     return ' '.join(words)
 
-def make_csvs(change_image_abs_path=True):
+def _find_test_big_category(path):
+    big_category = os.path.split(path)[0]
+    big_category = big_category.split('_')[0]
+    return big_category
+
+def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
     test.to_csv(os.path.join(data_directory, 'test_split.csv'), index=False)
 
     beauty_train = train.loc[(train['Category'] >= 0) & (train['Category'] <= 16)]
     beauty_valid = valid.loc[(valid['Category'] >= 0) & (valid['Category'] <= 16)]
+    beauty_test = test.loc[test['image_path'].map(_find_test_big_category)]
     beauty_train.to_csv(os.path.join(data_directory, 'beauty_train_split.csv'), index=False)
     beauty_valid.to_csv(os.path.join(data_directory, 'beauty_valid_split.csv'), index=False)
+    beauty_test.to_csv(os.path.join(data_directory, 'beauty_test_split.csv'), index=False)
 
     fashion_train = train.loc[(train['Category'] >= 17) & (train['Category'] <= 30)]
     fashion_valid = valid.loc[(valid['Category'] >= 17) & (valid['Category'] <= 30)]
+    fashion_test = test.loc[test['image_path'].map(_find_test_big_category)]
     fashion_train.to_csv(os.path.join(data_directory, 'fashion_train_split.csv'), index=False)
     fashion_valid.to_csv(os.path.join(data_directory, 'fashion_valid_split.csv'), index=False)
+    fashion_test.to_csv(os.path.join(data_directory, 'fashion_test_split.csv'), index=False)
 
     mobile_train = train.loc[(train['Category'] >= 31) & (train['Category'] <= 57)]
     mobile_valid = valid.loc[(valid['Category'] >= 31) & (valid['Category'] <= 57)]
+    mobile_test = test.loc[test['image_path'].map(_find_test_big_category)]
     mobile_train.to_csv(os.path.join(data_directory, 'mobile_train_split.csv'), index=False)
     mobile_valid.to_csv(os.path.join(data_directory, 'mobile_valid_split.csv'), index=False)
+    mobile_test.to_csv(os.path.join(data_directory, 'mobiletest_split.csv'), index=False)
 
 def copy_images_to_image_dir():
     n_categories = train_df['Category'].nunique()
@@ -271,9 +283,8 @@ if __name__ == '__main__':
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
-    combine_spelling_and_weird_txt()
-    #with open('misspelt_and_weird_mappings.json', 'r') as f:
-    #    misspelt_mappings = json.load(f)
+    with open('misspelt_and_weird_mappings.json', 'r') as f:
+        misspelt_mappings = json.load(f)
     """train = clean_and_translate_df(train)
     valid = clean_and_translate_df(valid)
     test = clean_and_translate_df(test)
