@@ -4,14 +4,14 @@ import pandas as pd
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_dir = os.path.join(psychic_learners_dir, 'data')
-big_category = 'mobile'
+big_category = 'fashion'
 train = pd.read_csv(os.path.join(data_dir, big_category + '_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_dir, big_category + '_valid_split.csv'))
 train['formatted_category'] = train['Category'].map(lambda x: '__label__' + str(x))
 valid['formatted_category'] = valid['Category'].map(lambda x: '__label__' + str(x))
 
-new_train = train[['translated_title', 'formatted_category']]
-new_valid = valid[['translated_title', 'formatted_category']]
+new_train = train[['stemmed_title', 'formatted_category']]
+new_valid = valid[['stemmed_title', 'formatted_category']]
 
 new_train.to_csv(os.path.join(data_dir, '_train_split.txt'),
                  header=None, index=None, sep=' ', mode='a')

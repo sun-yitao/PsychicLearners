@@ -12,6 +12,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from google.cloud import translate #optional
 from tqdm import tqdm
 from spellchecker import SpellChecker #optional
+from nltk.stem.porter import PorterStemmer
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -196,6 +197,20 @@ def clean_df(dataframe):
     cleaned_df['cleaned_title'] = cleaned_df['title'].map(clean_sentence)
     return cleaned_df
 
+
+stemmer = PorterStemmer(mode='NLTK_EXTENSIONS')
+def stem_sentence(sentence):
+    words = sentence.split(' ')
+    stemmed_words = []
+    for word in words:
+        stemmed_words.append(stemmer.stem(word))
+    return ' '.join(stemmed_words)
+
+def stem_df(dataframe):
+    stemmed_df = dataframe.copy()
+    stemmed_df['stemmed_title'] = stemmed_df['title'].map(stem_sentence)
+    return stemmed_df
+
 def clean_sentence(sentence):
     words = sentence.split(' ')
     for n, word in enumerate(words):
@@ -215,24 +230,24 @@ def make_csvs():
 
     beauty_train = train.loc[(train['Category'] >= 0) & (train['Category'] <= 16)]
     beauty_valid = valid.loc[(valid['Category'] >= 0) & (valid['Category'] <= 16)]
-    beauty_test = test.loc[test['image_path'].map(_find_test_big_category)]
+    beauty_test = test.loc[test['image_path'].map(_find_test_big_category) == 'beauty']
     beauty_train.to_csv(os.path.join(data_directory, 'beauty_train_split.csv'), index=False)
     beauty_valid.to_csv(os.path.join(data_directory, 'beauty_valid_split.csv'), index=False)
     beauty_test.to_csv(os.path.join(data_directory, 'beauty_test_split.csv'), index=False)
 
     fashion_train = train.loc[(train['Category'] >= 17) & (train['Category'] <= 30)]
     fashion_valid = valid.loc[(valid['Category'] >= 17) & (valid['Category'] <= 30)]
-    fashion_test = test.loc[test['image_path'].map(_find_test_big_category)]
+    fashion_test = test.loc[test['image_path'].map(_find_test_big_category) == 'fashion']
     fashion_train.to_csv(os.path.join(data_directory, 'fashion_train_split.csv'), index=False)
     fashion_valid.to_csv(os.path.join(data_directory, 'fashion_valid_split.csv'), index=False)
     fashion_test.to_csv(os.path.join(data_directory, 'fashion_test_split.csv'), index=False)
 
     mobile_train = train.loc[(train['Category'] >= 31) & (train['Category'] <= 57)]
     mobile_valid = valid.loc[(valid['Category'] >= 31) & (valid['Category'] <= 57)]
-    mobile_test = test.loc[test['image_path'].map(_find_test_big_category)]
+    mobile_test = test.loc[test['image_path'].map(_find_test_big_category) == 'mobile']
     mobile_train.to_csv(os.path.join(data_directory, 'mobile_train_split.csv'), index=False)
     mobile_valid.to_csv(os.path.join(data_directory, 'mobile_valid_split.csv'), index=False)
-    mobile_test.to_csv(os.path.join(data_directory, 'mobiletest_split.csv'), index=False)
+    mobile_test.to_csv(os.path.join(data_directory, 'mobile_test_split.csv'), index=False)
 
 def copy_images_to_image_dir():
     n_categories = train_df['Category'].nunique()
@@ -297,15 +312,14 @@ def check_copied_images_correct():
 if __name__ == '__main__':
     #extract_tar_images() 
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
-    filter_numeric_from_misspelt_and_weird_json()
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
     with open('misspelt_and_weird_mappings.json', 'r') as f:
         misspelt_mappings = json.load(f)
-    """train = clean_and_translate_df(train)
-    valid = clean_and_translate_df(valid)
-    test = clean_and_translate_df(test)
-    make_csvs()"""
+    train = stem_df(train)
+    valid = stem_df(valid)
+    test = stem_df(test)
+    make_csvs()
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
