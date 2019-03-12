@@ -25,7 +25,7 @@ N_CLASSES = 14
 MODEL_NAME = 'resnext_imagenet_classweights'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
