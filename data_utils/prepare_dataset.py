@@ -312,6 +312,9 @@ def check_copied_images_correct():
 if __name__ == '__main__':
     #extract_tar_images() 
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
+    with open('titles.txt', 'w') as f:
+        f.writelines([title + '\n' for title in titles])
+    """
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
     with open('misspelt_and_weird_mappings.json', 'r') as f:
@@ -319,7 +322,7 @@ if __name__ == '__main__':
     train = stem_df(train)
     valid = stem_df(valid)
     test = stem_df(test)
-    make_csvs()
+    make_csvs()"""
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
