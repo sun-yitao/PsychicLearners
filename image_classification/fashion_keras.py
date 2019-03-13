@@ -27,7 +27,7 @@ N_CLASSES = 14
 MODEL_NAME = 'effnet'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
