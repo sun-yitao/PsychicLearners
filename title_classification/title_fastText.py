@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-from fastText import train_supervised, train_unsupervised
+from fastText import train_supervised, train_unsupervised, load_model
 import numpy as np
 
 
@@ -22,22 +22,25 @@ if __name__ == "__main__":
     #    epoch = 5, neg = 5, wordNgrams = 4, loss = 'ns', bucket = 2000000,
     #    lrUpdateRate = 100, t = 0.0001, label = '__label__', verbose = 2, pretrainedVectors = '')
     #u_model.save_model("fil9.vec")
-    model = train_supervised(
-        input=train_data, epoch=6, lr=0.1, dim=100,
-        wordNgrams=4, verbose=2, ws=5, lrUpdateRate=100, pretrainedVectors='word2vec.txt'
-    )
-    correct = 0
-    total = 0
-    with open(valid_data, 'r') as f:
-        for example in f.readlines():
-            label = example.split(' ')[0]
-            text = example.split(' ')[1:]
-            text = ' '.join(text).replace('\n', '')
-            pred = model.predict(text)
-            if pred[0][0] == label:
-                correct += 1
-    print_results(*model.test(valid_data))
-            
+    params = [1,2,3,4,5]
+    for param in params:
+        print(param)
+        model = train_supervised(
+            input=train_data, epoch=6, lr=0.1, dim=100,
+            wordNgrams=4, verbose=2, ws=5, lrUpdateRate=100,
+        )
+        correct = 0
+        total = 0
+        with open(valid_data, 'r') as f:
+            for example in f.readlines():
+                label = example.split(' ')[0]
+                text = example.split(' ')[1:]
+                text = ' '.join(text).replace('\n', '')
+                pred = model.predict(text)
+                if pred[0][0] == label:
+                    correct += 1
+        print_results(*model.test(valid_data))
+        model.save_model("beauty_model{}.bin".format(param))
 
             
 

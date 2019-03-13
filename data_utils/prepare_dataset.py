@@ -13,6 +13,8 @@ from google.cloud import translate #optional
 from tqdm import tqdm
 from spellchecker import SpellChecker #optional
 from nltk.stem.porter import PorterStemmer
+import pytesseract
+from PIL import Image
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
@@ -223,6 +225,10 @@ def _find_test_big_category(path):
     big_category = big_category.split('_')[0]
     return big_category
 
+def extract_text_from_image(image_path):
+    full_img_path = os.path.join(output_dir, image_path)
+    extracted_text = pytesseract.image_to_string(Image.open(image_path))
+
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
@@ -312,17 +318,15 @@ def check_copied_images_correct():
 if __name__ == '__main__':
     #extract_tar_images() 
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
-    with open('titles.txt', 'w') as f:
-        f.writelines([title + '\n' for title in titles])
-    """
+    
     with open('translations_mapping.json', 'r') as f:
         translations_mapping = json.load(f)
-    with open('misspelt_and_weird_mappings.json', 'r') as f:
+    with open('alphabetic_misspelt_and_weird_mappings.json', 'r') as f:
         misspelt_mappings = json.load(f)
-    train = stem_df(train)
-    valid = stem_df(valid)
-    test = stem_df(test)
-    make_csvs()"""
+    train = clean_df(train)
+    valid = clean_df(valid)
+    test = clean_df(test)
+    make_csvs()
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
