@@ -15,9 +15,9 @@ labels = [str(x) for x in range(17,31)]
 ckpt_dir = data_dir / 'magpie' / 'checkpoints' / 'fashion' / 'v1'
 os.makedirs(str(ckpt_dir), exist_ok=True)
 
-ckpt = keras.callbacks.ModelCheckpoint(os.path.join(ckpt_dir, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
-                                       monitor='val_acc', verbose=1, save_best_only=True)
-reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
+ckpt = keras.callbacks.ModelCheckpoint(os.path.join(ckpt_dir, 'model.{epoch:02d}-{val_categorical_accuracy:.2f}.h5'),
+                                       monitor='val_categorical_accuracy', verbose=1, save_best_only=True)
+reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_categorical_accuracy', factor=0.2, patience=5,
                                               verbose=1, mode='auto',  # min_delta=0.001,
                                               cooldown=0, min_lr=0)
 
