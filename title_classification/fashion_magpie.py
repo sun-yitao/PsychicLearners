@@ -13,7 +13,7 @@ keras.backend.set_session(session)
 data_dir = Path.cwd().parent / 'data'
 labels = [str(x) for x in range(17,31)]
 ckpt_dir = data_dir / 'magpie' / 'checkpoints' / 'fashion' / 'v1'
-os.makedirs(str(ckpt_dir / 'scaler.pkl'), exist_ok=True)
+os.makedirs(str(ckpt_dir), exist_ok=True)
 
 ckpt = keras.callbacks.ModelCheckpoint(os.path.join(ckpt_dir, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                        monitor='val_acc', verbose=1, save_best_only=True)
@@ -23,7 +23,7 @@ reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, pat
 
 magpie = Magpie(word2vec_model=str(Path.cwd().parent/ 'title_classification' / 'word2vec.bin'))
 magpie.fit_scaler(str(data_dir / 'magpie' / 'fashion' / 'train'))
-magpie.save_scaler(str(ckpt_dir), overwrite=True)
+magpie.save_scaler(str(ckpt_dir / 'scaler.pkl'), overwrite=True)
 magpie.batch_train(str(data_dir / 'magpie' / 'fashion' / 'train'), labels, 
                    test_dir=str(data_dir / 'magpie' / 'fashion' / 'valid'),
                    batch_size=256, epochs=30, callbacks=[ckpt, reduce_lr], verbose=2)
