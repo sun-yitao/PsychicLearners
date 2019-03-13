@@ -8,7 +8,8 @@ from keras.layers import Dense, Input
 #from keras.applications.inception_resnet_v2 import InceptionResNetV2
 #from keras.applications.nasnet import NASNetLarge
 #from keras.applications.resnext import ResNeXt50
-from keras_contrib.applications.resnet import ResNet18
+#from keras_contrib.applications.resnet import ResNet34
+from effnet import Effnet
 from random_eraser import get_random_eraser
 #from se_resnext import SEResNextImageNet
 from keras_preprocessing.image import ImageDataGenerator
@@ -23,7 +24,7 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 14
-MODEL_NAME = 'resnet18'
+MODEL_NAME = 'effnet'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 256
@@ -59,7 +60,8 @@ if __name__ == '__main__':
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)"""
-    model = ResNet18(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), classes=N_CLASSES)
+    model = Effnet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), nb_classes=N_CLASSES,
+                   include_top=True, weights=None)
 
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
