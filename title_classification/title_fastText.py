@@ -11,8 +11,8 @@ import numpy as np
 def print_results(N, p, r):
     print("N\t" + str(N))
     print("Accuracy: {}".format(correct/N))
-    print("P@{}\t{:.3f}".format(1, p))
-    print("R@{}\t{:.3f}".format(1, r))
+    print("P@{}\t{:.5f}".format(1, p))
+    print("R@{}\t{:.5f}".format(1, r))
 
 if __name__ == "__main__":
     psychic_learners_dir = os.path.split(os.getcwd())[0]
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     #    lrUpdateRate = 100, t = 0.0001, label = '__label__', verbose = 2, pretrainedVectors = '')
     #u_model.save_model("fil9.vec")
     model = train_supervised(
-        input=train_data, epoch=5, lr=0.1, dim=100,
-        wordNgrams=4, verbose=2, ws=7, lrUpdateRate=100, #pretrainedVectors='crawl-300d-2M.vec'
+        input=train_data, epoch=6, lr=0.1, dim=100,
+        wordNgrams=4, verbose=2, ws=5, lrUpdateRate=100, pretrainedVectors='word2vec.txt'
     )
     correct = 0
     total = 0

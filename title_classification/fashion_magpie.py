@@ -1,13 +1,10 @@
 import os
 from pathlib import Path
-import plaidml.keras
-plaidml.keras.install_backend()
 from magpie import Magpie
 
 data_dir = Path.cwd().parent / 'data'
 labels = [str(x) for x in range(17,31)]
-magpie = Magpie(
-    word2vec_model='/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/title_classification/word2vec.bin')
+magpie = Magpie(word2vec_model=str(Path.cwd().parent/ 'title_classification' / 'word2vec.bin'))
 magpie.fit_scaler(str(data_dir / 'magpie' / 'fashion' / 'train'))
 magpie.train(str(data_dir / 'magpie' / 'fashion' / 'train'), labels, 
              test_dir=str(data_dir / 'magpie'/ 'fashion' / 'valid') , 
