@@ -21,9 +21,10 @@ reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, pat
                                               verbose=1, mode='auto',  # min_delta=0.001,
                                               cooldown=0, min_lr=0)
 
-magpie = Magpie(word2vec_model=str(Path.cwd().parent/ 'title_classification' / 'word2vec.bin'))
-magpie.fit_scaler(str(data_dir / 'magpie' / 'fashion' / 'train'))
-magpie.save_scaler(str(ckpt_dir / 'scaler.pkl'), overwrite=True)
+magpie = Magpie(word2vec_model=str(Path.cwd().parent/ 'title_classification' / 'word2vec.bin'),
+                scaler=str(ckpt_dir / 'scaler.pkl'))
+#magpie.fit_scaler(str(data_dir / 'magpie' / 'fashion' / 'train'))
+#magpie.save_scaler(str(ckpt_dir / 'scaler.pkl'), overwrite=True)
 magpie.batch_train(str(data_dir / 'magpie' / 'fashion' / 'train'), labels, 
                    test_dir=str(data_dir / 'magpie' / 'fashion' / 'valid'),
                    batch_size=256, epochs=30, callbacks=[ckpt, reduce_lr], verbose=2)
