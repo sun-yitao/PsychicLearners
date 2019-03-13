@@ -26,7 +26,7 @@ N_CLASSES = 14
 MODEL_NAME = 'resnet18'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
