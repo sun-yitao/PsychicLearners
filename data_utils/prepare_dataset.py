@@ -229,6 +229,23 @@ def extract_text_from_image(image_path):
     full_img_path = os.path.join(output_dir, image_path)
     extracted_text = pytesseract.image_to_string(Image.open(image_path))
 
+def get_text_extractions(dataframe):
+    pass
+
+def check_mislabelling(dataframe):
+    with open(os.path.join(data_directory, 'categories.json'), 'r') as f:
+        categories_mapping = json.load(f)
+    categories_mapping = {
+        **categories_mapping['Mobile'], **categories_mapping['Beauty'], **categories_mapping['Fashion']}
+    for row in dataframe.itertuples():
+        title = row[2]
+        category = row[3]
+        image_path = row[4]
+        for key, value in categories_mapping.items():
+            if key.lower() in title and category != value:
+                print(f'Wrong Category: Current: {category} Expected: {value} ')
+                print(f'Title: {title} Image Path: {image_path}')
+
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
@@ -323,10 +340,12 @@ if __name__ == '__main__':
         translations_mapping = json.load(f)
     with open('alphabetic_misspelt_and_weird_mappings.json', 'r') as f:
         misspelt_mappings = json.load(f)
-    train = clean_df(train)
-    valid = clean_df(valid)
-    test = clean_df(test)
-    make_csvs()
+    check_mislabelling(train)
+    check_mislabelling(valid)
+    #train = clean_df(train)
+    #valid = clean_df(valid)
+    #test = clean_df(test)
+    #make_csvs()
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()
