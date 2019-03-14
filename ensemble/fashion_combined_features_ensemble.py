@@ -1,10 +1,13 @@
 import os
 from multiprocessing import cpu_count
+from pathlib import Path
 
 from PIL import Image
 import pandas as pd
 import numpy as np
-from pathlib import Path
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.utils.class_weight import compute_class_weight
+
 import keras
 from keras import layers
 from keras_preprocessing.image import ImageDataGenerator, img_to_array
@@ -76,13 +79,14 @@ MODEL_INPUT_SHAPE = (2048)
 class DataGenerator(keras.utils.Sequence):
     #TODO change dims
     # Usage: train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
-    """x: itemid y:category sparse"""
+    """x: concat features y:onehotencoded"""
     def __init__(self, x, y, batch_size=64, dim=MODEL_INPUT_SHAPE,
                  n_classes=N_CLASSES, shuffle=True):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
-        self.y = y
+        self.encoder = OneHotEncoder(sparse=False)
+        self.y = self.encoder.fit_transform(y.values.reshape(-1, 1))
         self.x = x
         self.n_classes = n_classes
         self.shuffle = shuffle
@@ -99,10 +103,9 @@ class DataGenerator(keras.utils.Sequence):
 
         # Find list of IDs
         x_temp = [self.x[i] for i in batch_indexes]
-
-        # Generate data
-        X, y = self.__data_generation(x_temp)
-
+        X = self.__data_generation(x_temp)
+        y = [self.y[i] for i in batch_indexes]
+        y = np.array(y)
         return X, y
 
     def on_epoch_end(self):
@@ -116,8 +119,6 @@ class DataGenerator(keras.utils.Sequence):
         'Generates data containing batch_size samples'
         # Initialization
         X = np.empty((self.batch_size, *self.dim))
-        y = np.empty((self.batch_size), dtype=int)
-
         # Generate data
         for i, ID in enumerate(x_temp):
             # Store sample
@@ -126,10 +127,7 @@ class DataGenerator(keras.utils.Sequence):
             combined = np.concatenate((image_feature, text_feature), axis=None)
             print(combined.shape) #TODO check shape
             X[i, ] = combined
-            # Store class
-            y[i] = self.y[ID]
-
-        return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
+        return X
 
 def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001):
     k_regularizer = keras.regularizers.l2(k_reg)
@@ -168,9 +166,14 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
     combined_model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
-    combined_model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=1000,
-                        validation_data=valid, validation_steps=valid.n/valid.batch_size,
-                        callbacks=[ckpt, reduce_lr, tensorboard], class_weight=class_weights)
+    train = pd.read_csv(TRAIN_CSV)
+    valid = pd.read_csv(VALID_CSV)
+    train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
+    valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
+    #class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
+    combined_model.fit_generator(train_datagen, steps_per_epoch=len(train_datagen), epochs=1000,
+                                 validation_data=valid_datagen, validation_steps=len(valid_datagen),
+                                 callbacks=[ckpt, reduce_lr, tensorboard])#class_weight=class_weights)
 
 if __name__ == '__main__':
     get_features(TRAIN_CSV)

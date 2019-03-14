@@ -74,18 +74,18 @@ if __name__ == '__main__':
     reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                             verbose=1, mode='auto',# min_delta=0.001,
                                             cooldown=0, min_lr=0)
-    #early_stopping = keras.callbacks.EarlyStopping(patience=5, verbose=1, restore_best_weights=True)
+    early_stopping = keras.callbacks.EarlyStopping(patience=5, verbose=1, restore_best_weights=True)
     log_dir = "logs_fashion/model_{}_{}".format(MODEL_NAME, datetime.utcnow().strftime("%d%m%Y_%H%M%S"))
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = keras.callbacks.TensorBoard(log_dir)
-    """
+    
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=100, 
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
-                        callbacks=[ckpt, early_stopping, tensorboard])"""
+                        callbacks=[ckpt, early_stopping, tensorboard])
     
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
