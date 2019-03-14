@@ -15,7 +15,8 @@ from random_eraser import get_random_eraser
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from sklearn.utils.class_weight import compute_class_weight
-
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 TRAIN_DIR = os.path.join(psychic_learners_dir, 'data',
                          'image', 'v1_train_nodups_240x240', 'fashion')
@@ -27,7 +28,7 @@ N_CLASSES = 14
 MODEL_NAME = 'effnet'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
