@@ -4,7 +4,7 @@ import time
 import json
 from glob import glob
 from shutil import copy, move
-
+from multiprocessing import cpu_count, Parallel, Pool
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -227,10 +227,27 @@ def _find_test_big_category(path):
 
 def extract_text_from_image(image_path):
     full_img_path = os.path.join(output_dir, image_path)
-    extracted_text = pytesseract.image_to_string(Image.open(image_path))
+    extracted_text = pytesseract.image_to_string(Image.open(full_img_path))
+    # TODO Do some cleaning on text
+    return extracted_text
 
 def get_text_extractions(dataframe):
-    pass
+    new_df = dataframe.copy()
+    new_df['extractions'] = new_df['image_path'].map(extract_text_from_image)
+    return new_df
+
+
+def parallelize(data, func):
+    data_split = np.array_split(data, cpu_count())
+    pool = Pool(cpu_count())
+    data = pd.concat(pool.map(func, data_split))
+    pool.close()
+    pool.join()
+    return data
+
+def get_text_extractions_parallel(dataframe):
+    combined_dataframe = parallelize(dataframe, get_text_extractions)
+    return combined_dataframe
 
 def check_mislabelling(dataframe):
     with open(os.path.join(data_directory, 'categories.json'), 'r') as f:
@@ -239,6 +256,7 @@ def check_mislabelling(dataframe):
         **categories_mapping['Mobile'], **categories_mapping['Beauty'], **categories_mapping['Fashion']}
     for row in dataframe.itertuples():
         title = row[2]
+        title = title.replace('t shirt', 'tshirt')
         category = row[3]
         image_path = row[4]
         for key, value in categories_mapping.items():
