@@ -1,10 +1,12 @@
 import tarfile
 import os
+import re
 import time
 import json
 from glob import glob
 from shutil import copy, move
 from multiprocessing import cpu_count, Parallel, Pool
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -228,7 +230,7 @@ def _find_test_big_category(path):
 def extract_text_from_image(image_path):
     full_img_path = os.path.join(output_dir, image_path)
     extracted_text = pytesseract.image_to_string(Image.open(full_img_path))
-    # TODO Do some cleaning on text
+    extracted_text = clean_str(extracted_text)
     return extracted_text
 
 def get_text_extractions(dataframe):
@@ -263,6 +265,13 @@ def check_mislabelling(dataframe):
             if key.lower() in title and category != value:
                 print(f'Wrong Category: Current: {category} Expected: {value} ')
                 print(f'Title: {title} Image Path: {image_path}')
+
+def clean_str(text):
+    text = re.sub(r"[^A-Za-z0-9(),!?\'\`\"]", " ", text)
+    text = re.sub(r"\s{2,}", " ", text)
+    text = text.strip().lower()
+
+    return text
 
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
