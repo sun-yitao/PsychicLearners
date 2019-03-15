@@ -12,6 +12,7 @@ from sklearn import decomposition, ensemble
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
+from mlens.ensemble import SuperLearner
 
 import keras
 from keras.preprocessing import text, sequence

@@ -5,7 +5,7 @@ import time
 import json
 from glob import glob
 from shutil import copy, move
-from multiprocessing import cpu_count, Parallel, Pool
+from multiprocessing import cpu_count, Pool
 
 import pandas as pd
 import numpy as np
@@ -15,6 +15,7 @@ from google.cloud import translate #optional
 from tqdm import tqdm
 from spellchecker import SpellChecker #optional
 from nltk.stem.porter import PorterStemmer
+from nltk.tokenize import word_tokenize
 import pytesseract
 from PIL import Image
 
@@ -32,6 +33,7 @@ mobile_categories = [35, 53, 40, 39, 52, 45, 31, 51, 49, 56, 38,
 fashion_categories = [23, 27, 18, 20, 24, 22, 19, 26, 25, 29, 28, 17, 21, 30]
 beauty_categories = [1, 0, 7, 14, 2, 8, 5, 4, 13, 11, 15, 3, 10, 9, 6, 16, 12]
 def _image_filename_path_writer(filename, category):
+    """Returns absolute path given image path from dataframe"""
     if category in beauty_categories:
         big_category = 'beauty'
     elif category in  fashion_categories:
@@ -56,7 +58,7 @@ train, valid = train_test_split(train_df,
                                 test_size=0.2, random_state=42)
 
 def extract_tar_images():
-    # extract tarfiles in data directory to image directory
+    """extract tarfiles in data directory to image directory"""
     tarfiles = glob(os.path.join(data_directory, '*.tar.gz'))
     for t in tqdm(tarfiles):
         tf = tarfile.open(t)
@@ -72,7 +74,7 @@ titles = pd.concat([test['title'], train_df['title']])
 v = count_vect.fit(titles)
 
 def get_translations_dict():
-    # use google translate api to get a dict of translations mapping and save it for future use
+    """Use google translate api to get a dict of translations mapping and save it for future use"""
     translate_client = translate.Client()
     target = 'en' # translate all to english
     for word, count in tqdm(v.vocabulary_.items()):
@@ -99,6 +101,7 @@ def get_translations_dict():
         file.write(json.dumps(word_to_lang))
 
 def translate_sentence(sentence):
+    """Use loaded translations mapping to translate non english to english"""
     words = sentence.split(' ')
     for n, word in enumerate(words):
         if word in translations_mapping:
@@ -106,19 +109,57 @@ def translate_sentence(sentence):
     return ' '.join(words)
 
 def translate_df(dataframe):
-    #translate train, valid and test titles to english on a new column
+    """Translate train, valid and test titles to english on a new column"""
     translated_df = dataframe.copy()
     translated_df['translated_title'] = translated_df['title'].map(translate_sentence)
     return translated_df
 
+def get_language_list():
+    """From word_to_lang.json get counts of detected language and sorts them in descending order"""
+    word2lang = os.path.join(psychic_learners_dir, 'data_utils', 'word_to_lang.json')
+    with open(word2lang, 'r') as f:
+        word2lang = json.load(f)
+    language_counts = {}
+    for word, lang in word2lang.items():
+        if lang in language_counts.keys():
+            language_counts[lang] += 1
+        else:
+            language_counts[lang] = 1
+    result_list = sorted([[lang, counts] for lang, counts in language_counts.items()], 
+                     key = lambda x: x[1], reverse=True)
+    return result_list #array of [lang, count]
+
+def translate_categories_json(n=10):
+    """Translate category descriptions in categories.json to the most common n non-english languages"""
+    language_list = get_language_list()
+    language_list = language_list[:n]
+    with open(os.path.join(data_directory, 'categories.json'), 'r') as f:
+        categories_mapping = json.load(f)
+    categories_mapping = {**categories_mapping['Mobile'], **categories_mapping['Beauty'], **categories_mapping['Fashion']}
+    translate_client = translate.Client()
+    translated_categories = categories_mapping.copy()
+    for [lang, count] in language_list:
+        target = lang
+        for key, value in categories_mapping.items():  # key = description
+            try:
+                translation = translate_client.translate(
+                    key, source_language='en', target_language=target)
+            except:
+                print('Error translating {} to {}'.format(key, target))
+                continue
+            translated_categories[translation['translatedText']] = value
+            
+
 weird_words = set()
 def detect_weird_sentence(sentence):
+    """Add words not in count vectorizer vocabulary to a weird words set"""
     words = sentence.split(' ')
     for word in words:
         if word not in v.vocabulary_.keys():
             weird_words.add(word)
 
 def get_weird_sentences():
+    """Writes weird mapping to txt"""
     titles.map(detect_weird_sentence)
     global weird_words
     weird_words = list(weird_words)
@@ -131,6 +172,7 @@ spelling_errors = set()
 correct_words = set()
 wrong_words = set()
 def detect_spelling_mistake(sentence):
+    """Check for spelling errors in sentence, if exist add to set to check as running spell check is computationally expensive"""
     global spelling_errors, correct_words, wrong_words
     words = sentence.split(' ')
     for word in words:
@@ -145,6 +187,7 @@ def detect_spelling_mistake(sentence):
             correct_words.add(word)
 
 def get_spelling_mistakes():
+    """Writes spelling mistakes mapping to txt"""
     titles.map(detect_spelling_mistake)
     global spelling_errors
     spelling_errors = list(spelling_errors)
@@ -153,7 +196,7 @@ def get_spelling_mistakes():
         f.writelines(spelling_errors)
 
 def combine_spelling_and_weird_txt():
-    #combine the 2 files into a single mapping
+    """Combine spelling and weird txts into a single txt"""
     misspelt_mappings = {}
     misspelt_words = set()
     with open('spelling_errors.txt', 'r') as f:
@@ -173,6 +216,7 @@ def combine_spelling_and_weird_txt():
         file.write(json.dumps(misspelt_mappings))
 
 def filter_numeric_from_misspelt_and_weird_json():
+    """Split misspelt and weird json into alpha and alphanumeric/numeric"""
     def _hasNumbers(inputString):
         return any(char.isdigit() for char in inputString)
     numeric = {}
@@ -223,17 +267,31 @@ def clean_sentence(sentence):
     return ' '.join(words)
 
 def _find_test_big_category(path):
+    """Get category from image path"""
     big_category = os.path.split(path)[0]
     big_category = big_category.split('_')[0]
     return big_category
 
 def extract_text_from_image(image_path):
+    """Run OCR over image to get text and strip punctuation"""
     full_img_path = os.path.join(output_dir, image_path)
-    extracted_text = pytesseract.image_to_string(Image.open(full_img_path))
-    extracted_text = clean_str(extracted_text)
-    return extracted_text
+    if not full_img_path.endswith('.jpg'):
+        full_img_path += '.jpg'
+    extract = pytesseract.image_to_string(Image.open(full_img_path))
+    extract = extract.strip().lower()
+    if not extract:
+        return '0'
+    extract = re.sub(r"[^A-Za-z0-9]", " ", extract)
+    extract = re.sub(r'\d +', '', extract)
+    extract = word_tokenize(extract)
+    extract = [word for word in extract if word.isalnum() and len(word) > 2]
+    print(' '.join(extract))
+    if not extract:
+        return '0'
+    return extract
 
 def get_text_extractions(dataframe):
+    """Return new df with  a column of extracted text from images"""
     new_df = dataframe.copy()
     new_df['extractions'] = new_df['image_path'].map(extract_text_from_image)
     return new_df
@@ -252,26 +310,52 @@ def get_text_extractions_parallel(dataframe):
     return combined_dataframe
 
 def check_mislabelling(dataframe):
+    wrong = {'itemid': [],'title':[], 'Category':[], 'expected_category':[], 'image_path':[]}
     with open(os.path.join(data_directory, 'categories.json'), 'r') as f:
         categories_mapping = json.load(f)
     categories_mapping = {
         **categories_mapping['Mobile'], **categories_mapping['Beauty'], **categories_mapping['Fashion']}
+    correct = 0
     for row in dataframe.itertuples():
+        itemid = row[1]
         title = row[2]
         title = title.replace('t shirt', 'tshirt')
         category = row[3]
         image_path = row[4]
+        
         for key, value in categories_mapping.items():
             if key.lower() in title and category != value:
-                print(f'Wrong Category: Current: {category} Expected: {value} ')
-                print(f'Title: {title} Image Path: {image_path}')
+                wrong['itemid'].append(itemid)
+                wrong['title'].append(title)
+                wrong['Category'].append(category)
+                wrong['expected_category'].append(value)
+                wrong ['image_path'].append(image_path)
+            elif key.lower() in title and category == value:
+                correct += 1
+    wrong_df = pd.DataFrame(data=wrong)
+    wrong_df.to_csv(os.path.join( data_directory, 'suspected_wrong.csv'), index=False)
+    print(correct, correct / 666615)
 
-def clean_str(text):
-    text = re.sub(r"[^A-Za-z0-9(),!?\'\`\"]", " ", text)
-    text = re.sub(r"\s{2,}", " ", text)
-    text = text.strip().lower()
+def remove_suspected_wrong(dataframe):
+    suspected_wrong_df = pd.read_csv(os.path.join(data_directory, 'suspected_wrong.csv'))
+    new_df = dataframe.copy()
+    removed = 0
+    for itemid in dataframe['itemid'].values:
+        if itemid in suspected_wrong_df['itemid'].values:
+            new_df = new_df[new_df['itemid'] != itemid] #drop the row
+            removed += 1
+    print(removed)
+    return new_df
 
-    return text
+def change_suspected_wrong(dataframe):
+    suspected_wrong_df = pd.read_csv(os.path.join(data_directory, 'suspected_wrong.csv'))
+    new_df = dataframe.copy()
+    for itemid, category in zip(suspected_wrong_df['itemid'].values,
+                                suspected_wrong_df['expected_category'].values):
+        idx = np.where(new_df['itemid'] == itemid)
+        new_df.at[idx, 'Category'] = category
+    return new_df
+        
 
 def make_csvs():
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
@@ -367,12 +451,13 @@ if __name__ == '__main__':
         translations_mapping = json.load(f)
     with open('alphabetic_misspelt_and_weird_mappings.json', 'r') as f:
         misspelt_mappings = json.load(f)
-    check_mislabelling(train)
-    check_mislabelling(valid)
-    #train = clean_df(train)
-    #valid = clean_df(valid)
-    #test = clean_df(test)
-    #make_csvs()
+    #check_mislabelling(train)
+    #check_mislabelling(valid)
+    #check_mislabelling(train_df)
+    train = get_text_extractions_parallel(train)
+    valid = get_text_extractions_parallel(valid)
+    test = get_text_extractions_parallel(valid)
+    make_csvs()
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()

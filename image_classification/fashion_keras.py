@@ -4,17 +4,14 @@ import numpy as np
 import tensorflow as tf
 import keras
 from keras.layers import Dense, Input
-#from keras.applications.xception import Xception, preprocess_input
-#from keras.applications.inception_resnet_v2 import InceptionResNetV2
-#from keras.applications.nasnet import NASNetLarge
-#from keras.applications.resnext import ResNeXt50
-from keras_contrib.applications.resnet import ResNet34
-#from effnet import Effnet
-from random_eraser import get_random_eraser
-#from se_resnext import SEResNextImageNet
+
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from sklearn.utils.class_weight import compute_class_weight
+
+from random_eraser import get_random_eraser
+from se_densenet import SEDenseNetImageNet169, SEDenseNetImageNet201, SEDenseNetImageNet264, SEDenseNetImageNet161
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 psychic_learners_dir = os.path.split(os.getcwd())[0]
@@ -25,10 +22,10 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 14
-MODEL_NAME = 'effnet'
+MODEL_NAME = 'se_densenet169'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 if __name__ == '__main__':
     config = tf.ConfigProto()
@@ -51,17 +48,21 @@ if __name__ == '__main__':
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
     # model
-    """input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = Xception(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                           include_top=False,
-                           weights='imagenet',
-                           input_tensor=input_tensor,
-                           pooling='avg',
-                           classes=N_CLASSES)
+    input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
+    base_model = SEDenseNetImageNet169(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                       bottleneck=True,
+                                       reduction=0.5,
+                                       dropout_rate=0.0,
+                                       weight_decay=1e-4,
+                                       include_top=False,
+                                       weights=None,
+                                       input_tensor=input_tensor,
+                                       #pooling='avg',
+                                       classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
-    model = keras.models.Model(inputs=base_model.input, outputs=predictions)"""
-    model = ResNet34(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), classes=N_CLASSES)
+    model = keras.models.Model(inputs=base_model.input, outputs=predictions)
+    #model = ResNet34(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), classes=N_CLASSES)
 
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
@@ -80,13 +81,13 @@ if __name__ == '__main__':
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
     tensorboard = keras.callbacks.TensorBoard(log_dir)
-    
+    """
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     model.fit_generator(train, steps_per_epoch=train.n/train.batch_size, epochs=100, 
                         validation_data=valid, validation_steps=valid.n/valid.batch_size,
-                        callbacks=[ckpt, early_stopping, tensorboard])
+                        callbacks=[ckpt, early_stopping, tensorboard])"""
     
     model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
