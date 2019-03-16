@@ -62,7 +62,7 @@ if __name__ == '__main__':
     # model
     input_tensor = Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     base_model = InceptionResNetV2(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                                     include_top='imagenet',
+                                     include_top=False,
                                      weights=None,
                                      input_tensor=input_tensor,
                                      pooling='avg',

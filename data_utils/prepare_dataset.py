@@ -27,6 +27,7 @@ image_directory = os.path.join(data_directory, 'image')
 output_dir = os.path.join(image_directory, 'original')
 train_dir = os.path.join(image_directory, 'v1_train_240x240')
 valid_dir = os.path.join(image_directory, 'valid_240x240')
+test_dir = os.path.join(image_directory, 'test_sorted')
 
 mobile_categories = [35, 53, 40, 39, 52, 45, 31, 51, 49, 56, 38,
                         34, 46, 33, 57, 37, 55, 32, 42, 44, 50, 36, 43, 54, 41, 47, 48]
@@ -383,6 +384,20 @@ def make_csvs():
     mobile_valid.to_csv(os.path.join(data_directory, 'mobile_valid_split.csv'), index=False)
     mobile_test.to_csv(os.path.join(data_directory, 'mobile_test_split.csv'), index=False)
 
+
+def move_directory_to_big_category(small_category_directory):
+    dst, category_number = os.path.split(small_category_directory)
+    category_number = int(category_number)
+    if category_number in mobile_categories:
+        dst = os.path.join(dst, 'mobile')
+        move(small_category_directory, dst)
+    elif category_number in fashion_categories:
+        dst = os.path.join(dst, 'fashion')
+        move(small_category_directory, dst)
+    elif category_number in beauty_categories:
+        dst = os.path.join(dst, 'beauty')
+        move(small_category_directory, dst)
+
 def copy_images_to_image_dir():
     n_categories = train_df['Category'].nunique()
     # create directory structure such that every category is represented by a folder
@@ -411,18 +426,44 @@ def copy_images_to_image_dir():
     valid_category_directories = glob(os.path.join(valid_dir, '*'))
     valid_category_directories = [dir for dir in valid_category_directories if os.path.isdir(dir)]
 
-    def move_directory_to_big_category(small_category_directory):
-        dst, category_number = os.path.split(small_category_directory)
-        category_number = int(category_number)
-        if category_number in mobile_categories:
-            dst = os.path.join(dst, 'mobile')
-            move(small_category_directory, dst)
-        elif category_number in fashion_categories:
-            dst = os.path.join(dst, 'fashion')
-            move(small_category_directory, dst)
-        elif category_number in beauty_categories:
-            dst = os.path.join(dst, 'beauty')
-            move(small_category_directory, dst)
+    for big_category in ['beauty', 'fashion', 'mobile']:
+        os.makedirs(os.path.join(train_dir, big_category), exist_ok=True)
+        os.makedirs(os.path.join(valid_dir, big_category), exist_ok=True)
+
+    for train_cat_dir in train_category_directories:
+        move_directory_to_big_category(train_cat_dir)
+    for valid_cat_dir in valid_category_directories:
+        move_directory_to_big_category(valid_cat_dir)
+        
+
+def copy_test_images_to_test_image_dir():
+    n_categories = train_df['Category'].nunique()
+    # create directory structure such that every category is represented by a folder
+    # this will make balancing and augmenting the dataset easier
+    for i in range(n_categories):
+        os.makedirs(os.path.join(test_dir, str(i)), exist_ok=True)
+    os.makedirs(os.path.join(image_directory, 'test'), exist_ok=True)
+
+    # copy the images to the respective categories, if low on disk space change to shutil.move
+    # not well optimised takes forever to run
+    print('Copying training images')
+    for row in tqdm(train.itertuples()):
+        copy(row[5], os.path.join(train_dir, str(row[3])))
+    print('Copying validation images')
+    for row in tqdm(valid.itertuples()):
+        copy(row[5], os.path.join(valid_dir, str(row[3])))
+    print('Copying test images')
+    for row in tqdm(test.itertuples()):
+        copy(row[4], os.path.join(image_directory, 'test'))
+
+    # This was added after it was officially confirmed that the 3 big categories can be used in prediction
+    # in order to sort the category folders into big categories and apply a separate classifier to each big category
+    train_category_directories = glob(os.path.join(train_dir, '*'))
+    train_category_directories = [
+        dir for dir in train_category_directories if os.path.isdir(dir)]
+    valid_category_directories = glob(os.path.join(valid_dir, '*'))
+    valid_category_directories = [
+        dir for dir in valid_category_directories if os.path.isdir(dir)]
 
     for big_category in ['beauty', 'fashion', 'mobile']:
         os.makedirs(os.path.join(train_dir, big_category), exist_ok=True)
@@ -454,10 +495,7 @@ if __name__ == '__main__':
     #check_mislabelling(train)
     #check_mislabelling(valid)
     #check_mislabelling(train_df)
-    train = get_text_extractions_parallel(train)
-    valid = get_text_extractions_parallel(valid)
-    test = get_text_extractions_parallel(valid)
-    make_csvs()
+    #make_csvs()
     #get_spelling_mistakes()
     #copy_images_to_image_dir()
     #check_copied_images_correct()

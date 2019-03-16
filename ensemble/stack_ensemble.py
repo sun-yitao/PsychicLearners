@@ -15,24 +15,21 @@ import tensorflow as tf
 
 """Stacking Ensemble using probabilties predicted on validation, validating on public test set
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
-IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'MODEL NAME')
-ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities' / BIG_CATEGORY)
+BIG_CATEGORY = 'beauty'
+ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
-N_CLASSES = 14
-N_MODELS = 3
+N_CLASSES = 17
+N_MODELS = 2
 BATCH_SIZE = 64
-image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-image_model = image_model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
-print(image_model.summary())
 
 def read_probabilties(proba_folder, subset='valid',
                       model_names=None):
@@ -48,29 +45,32 @@ def read_probabilties(proba_folder, subset='valid',
             print(prob.shape)
             all_probabilities.append(prob)
 
-    #TODO Concatenate probs along axis
-    for prob in all_probabilities:
-        pass
+    all_probabilities = np.concatenate([prob for prob in all_probabilities], axis=1)
+    print(all_probabilities.shape)
     return all_probabilities
 
 
-MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS)
+MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS,)
 def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0.0001):
     k_regularizer = keras.regularizers.l2(k_reg)
     input_tensor = keras.layers.Input(shape=MODEL_INPUT_SHAPE)
     if dense1:
         x = layers.Dense(dense1, activation=None, kernel_initializer='he_uniform')(input_tensor)
         x = layers.PReLU()(x)
-        x = layers.Dropout(dropout)(x)
+        #x = layers.Dropout(dropout)(x)
     if dense2:
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(input_tensor)
+        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(x)
         x = layers.PReLU()(x)
-        x = layers.Dropout(dropout)(x)
+        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(x)
+        x = layers.PReLU()(x)
+        #x = layers.Dropout(dropout)(x)
+
     if dense1:
         predictions = layers.Dense(N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(x)
     else:
         predictions = layers.Dense(
             N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(input_tensor)
+
     model = keras.models.Model(inputs=input_tensor, outputs=predictions)
     return model
 
@@ -78,8 +78,8 @@ def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0.0001):
 def train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
           model_name='1'):
-    model = ensemble_model(dense1=1024, dense2=None,
-                           dropout=0.25, k_reg=0.0001)
+    model = ensemble_model(dense1=256, dense2=256,
+                           dropout=0.3, k_reg=0)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(
         lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
@@ -101,15 +101,55 @@ def train(lr_base=0.01, epochs=50, lr_decay_factor=1,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     
-    train_x = read_probabilties(proba_folder='', subset='valid') #TODO check shuffling
+    train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     train_y = pd.read_csv(VALID_CSV)['Category'].values
     encoder = OneHotEncoder(sparse=False)
     train_y = encoder.fit_transform(train_y.reshape(-1, 1))
-    test_x = read_probabilties(proba_folder='', subset='test')
-
-    model.fit(x=train_x, y=train_y, batch_size=BATCH_SIZE, epochs=epochs, verbose=2, 
+    model.fit(x=train_x, y=train_y, batch_size=BATCH_SIZE, epochs=1000, verbose=2, 
               callbacks=[ckpt, reduce_lr, tensorboard], validation_split=0.2,
               shuffle=True, class_weight=None, steps_per_epoch=None, validation_steps=None)
+
+def predict(model_path, big_category):
+    test_x = read_probabilties(proba_folder=os.path.join(
+        ROOT_PROBA_FOLDER, big_category), subset='test')
+    model = keras.models.load_model(model_path)
+    preds = model.predict(test_x)
+    print(preds.shape)
+    return preds
+
+def predict_all():
+    beauty_preds = predict(
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_fasttext_2_checkpoints/model.08-0.79.h5', big_category='beauty')
+    beauty_preds = np.argmax(beauty_preds, axis=1)
+    beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
+    beauty_preds = pd.DataFrame(data={'itemid':beauty_test['itemid'].values, 
+                                      'Category': beauty_preds})
     
+    fashion_preds = predict(
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_fasttext_2_checkpoints/model.23-0.65.h5', big_category='fashion')
+    fashion_preds = np.argmax(fashion_preds, axis=1)
+    fashion_preds = fashion_preds + 17
+    fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
+    fashion_preds = pd.DataFrame(data={'itemid': fashion_test['itemid'].values,
+                                       'Category': fashion_preds})
+
+    mobile_preds = predict(
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_fasttext_2_checkpoints/model.15-0.83.h5', big_category='mobile')
+    mobile_preds = np.argmax(mobile_preds, axis=1)
+    mobile_preds = mobile_preds + 31
+    mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
+    mobile_preds = pd.DataFrame(data={'itemid': mobile_test['itemid'].values,
+                                      'Category': mobile_preds})
+
+    all_preds = pd.concat([beauty_preds, fashion_preds, mobile_preds], ignore_index=True)
+    all_preds.to_csv(str(psychic_learners_dir / 'data' /
+                         'predictions_v2.csv'), index=False)
+
 if __name__ == '__main__':
-    
+    """
+    train(lr_base=0.01, epochs=50, lr_decay_factor=1,
+          checkpoint_dir=str(psychic_learners_dir / 'data' /
+                             'keras_checkpoints' / BIG_CATEGORY / 'combined'),
+          model_name='fasttext_2')"""
+
+    predict_all()

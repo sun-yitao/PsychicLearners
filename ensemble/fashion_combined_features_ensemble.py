@@ -14,6 +14,7 @@ from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
 """Combines text and image features to form one classifier"""
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
@@ -31,10 +32,11 @@ FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 14
 BATCH_SIZE = 64
+
 image_model = keras.models.load_model(IMAGE_MODEL_PATH)
 image_model = image_model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
 print(image_model.summary())
-text_model = keras.models.load_model(TEXT_MODEL_PATH)
+text_model = keras.models.load_model(TEXT_MODEL_PATH) #TODO load model for tf
 text_model = text_model.layers[:-1]
 
 def save_image_features(features, itemids):
@@ -44,7 +46,47 @@ def save_image_features(features, itemids):
 
 
 def extract_and_save_text_features(titles, itemid_array):
-    #TODO do relevant preprocessing of title array and extract features
+    if args.model == "char_cnn":
+        test_x, test_y, alphabet_size = build_char_dataset(
+            "test", "char_cnn", CHAR_MAX_LEN)
+
+
+    elif args.model == "vd_cnn":
+        test_x, test_y, alphabet_size = build_char_dataset(
+            "test", "vdcnn", CHAR_MAX_LEN)
+    else:
+        word_dict = build_word_dict()
+        test_x, test_y = build_word_dataset("test", word_dict, WORD_MAX_LEN)
+
+    checkpoint_file = tf.train.latest_checkpoint(args.model)
+    graph = tf.Graph()
+    with graph.as_default():
+        with tf.Session() as sess:
+            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+            saver.restore(sess, checkpoint_file)
+
+            x = graph.get_operation_by_name("x").outputs[0]
+            y = graph.get_operation_by_name("y").outputs[0]
+            is_training = graph.get_operation_by_name("is_training").outputs[0]
+            accuracy = graph.get_operation_by_name("accuracy/accuracy").outputs[0]
+
+            batches = batch_iter(test_x, test_y, BATCH_SIZE, 1)
+            sum_accuracy, cnt = 0, 0
+            for batch_x, batch_y in batches:
+                feed_dict = {
+                    x: batch_x,
+                    y: batch_y,
+                    is_training: False
+                }
+
+                accuracy_out = sess.run(accuracy, feed_dict=feed_dict)
+                sum_accuracy += accuracy_out
+                cnt += 1
+
+            print("Test Accuracy : {0}".format(sum_accuracy / cnt))
+
+    output_path = str(FEATURES_DIR / f'{itemid}_text_feature.npy')
+    np.save(output_path, feature)
     pass
 
 
@@ -136,7 +178,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
     x = layers.PReLU()(x)
     x = layers.Dropout(dropout)(x)
     if dense2:
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(input_tensor)
+        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(x)
         x = layers.PReLU()(x)
         x = layers.Dropout(dropout)(x)
     predictions = layers.Dense(N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(x)
