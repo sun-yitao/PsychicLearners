@@ -42,5 +42,5 @@ if __name__ == '__main__':
     dummy = Dense(N_CLASSES, activation=None)(predictions)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)"""
     model = keras.models.load_model(CHECKPOINT_PATH)
-    model.evaluate(valid, steps=len(valid), callbacks=None,
+    model.evaluate_generator(valid, steps=len(valid), callbacks=None,
                    max_queue_size=10, workers=cpu_count(), use_multiprocessing=True, verbose=1)
