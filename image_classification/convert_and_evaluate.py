@@ -18,6 +18,8 @@ IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 17
 LR_DECAY_FACTOR = 1
 BATCH_SIZE = 64
+LR_BASE = 0.01
+LR_DECAY_FACTOR = 1
 
 
 if __name__ == '__main__':
@@ -41,6 +43,11 @@ if __name__ == '__main__':
     predictions = Dense(N_CLASSES, activation='softmax')(x)
     dummy = Dense(N_CLASSES, activation=None)(predictions)
     model = keras.models.Model(inputs=base_model.input, outputs=predictions)"""
+    decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
+    sgd = keras.optimizers.SGD(lr=LR_BASE, decay=1e-6, momentum=0.9, nesterov=True)
+    model.compile(optimizer=sgd,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
     model = keras.models.load_model(CHECKPOINT_PATH)
     model.evaluate_generator(valid, steps=len(valid), callbacks=None,
                    max_queue_size=10, workers=cpu_count(), use_multiprocessing=True, verbose=1)
