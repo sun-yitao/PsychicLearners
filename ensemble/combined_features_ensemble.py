@@ -200,7 +200,6 @@ class DataGenerator(keras.utils.Sequence):
             image_feature = np.load(str(FEATURES_DIR / f'{ID}_image_feature.npy'))
             text_feature = np.load(str(FEATURES_DIR / f'{ID}_text_feature.npy'))
             combined = np.concatenate((image_feature, text_feature), axis=None)
-            print(combined.shape) #TODO check shape
             X[i, ] = combined
         return X
 
