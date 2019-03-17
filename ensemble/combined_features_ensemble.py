@@ -43,12 +43,6 @@ BATCH_SIZE = 128
 WORD_MAX_LEN = 15
 os.makedirs(FEATURES_DIR, exist_ok=True)
 
-image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-image_model.layers.pop()
-image_model.layers.pop()
-image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
-print(image_model.summary())
-
 with open("word_dict.pickle", "rb") as f:
     word_dict = pickle.load(f)
 
@@ -111,6 +105,12 @@ def save_image_features(features, itemids):
 
 
 def get_features(csv, subset):
+    image_model = keras.models.load_model(IMAGE_MODEL_PATH)
+    image_model.layers.pop()
+    image_model.layers.pop()
+    image_model = keras.models.Model(
+        inputs=image_model.input, outputs=image_model.layers[-1].output)
+    print(image_model.summary())
     """Extracts and saves text and image features"""
     df = pd.read_csv(csv)
     steps = (len(df) / BATCH_SIZE) + 1
@@ -218,7 +218,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
     model = keras.models.Model(inputs=input_tensor, outputs=predictions)
     return model
 
-def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1, 
+def train_combined_model(train_gen, val_gen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1'):
     combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0)
@@ -233,28 +233,25 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
     reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                                   verbose=1, mode='auto',
                                                   cooldown=0, min_lr=0)
-
-
     combined_model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
-    train = pd.read_csv(TRAIN_CSV)
-    valid = pd.read_csv(VALID_CSV)
-    train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
-    valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
+    
     #class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
-    combined_model.fit_generator(train_datagen, steps_per_epoch=len(train_datagen), epochs=1000,
-                                 validation_data=valid_datagen, validation_steps=len(valid_datagen),
+    combined_model.fit_generator(train_gen, steps_per_epoch=len(train_gen), epochs=1000,
+                                 validation_data=val_gen, validation_steps=len(val_gen),
                                  callbacks=[ckpt, reduce_lr])#class_weight=class_weights)
 
 if __name__ == '__main__':
     #get_features(TRAIN_CSV, subset='train')
     #get_features(VALID_CSV, subset='valid')
     #get_features(TEST_CSV, subset='test')
+    train = pd.read_csv(TRAIN_CSV)
+    valid = pd.read_csv(VALID_CSV)
     test = pd.read_csv(TEST_CSV)
     train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
-    train_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
+    valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
 
-    train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
+    train_combined_model(train_datagen, valid_datagen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1')
