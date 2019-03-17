@@ -37,7 +37,7 @@ TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'test_240x240')
 FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 27
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 WORD_MAX_LEN = 15
 os.makedirs(FEATURES_DIR, exist_ok=True)
 
@@ -119,7 +119,7 @@ def get_features(csv, subset):
         for n, row in enumerate(batch.itertuples()):
             itemid = row[1]
             title = row[2]
-            if set == 'test':
+            if subset == 'test':
                 image_path = row[4]
             else:
                 category = row[3]
@@ -242,7 +242,7 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
                                  callbacks=[ckpt, reduce_lr, tensorboard])#class_weight=class_weights)
 
 if __name__ == '__main__':
-    get_features(TRAIN_CSV, subset='train')
-    get_features(VALID_CSV, subset='valid')
+    #get_features(TRAIN_CSV, subset='train')
+    #get_features(VALID_CSV, subset='valid')
     get_features(TEST_CSV, subset='test')
     #get_valid_features()
