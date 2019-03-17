@@ -144,11 +144,11 @@ def get_features(csv, subset):
 
 
 if BIG_CATEGORY == 'mobile':
-    MODEL_INPUT_SHAPE = (1536 + 700)
+    MODEL_INPUT_SHAPE = (1536 + 700,)
 elif BIG_CATEGORY == 'fashion':
-    MODEL_INPUT_SHAPE = (2048 + 840)
+    MODEL_INPUT_SHAPE = (2048 + 840,)
 elif BIG_CATEGORY == 'beauty':
-    MODEL_INPUT_SHAPE = (1536 + 840)
+    MODEL_INPUT_SHAPE = (1536 + 840,)
 
 
 class DataGenerator(keras.utils.Sequence):
