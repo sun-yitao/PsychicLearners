@@ -14,20 +14,20 @@ def print_results(N, p, r):
     print("P@{}\t{:.5f}".format(1, p))
     print("R@{}\t{:.5f}".format(1, r))
 
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'fashion'
 if __name__ == "__main__":
     psychic_learners_dir = os.path.split(os.getcwd())[0]
     train_data = os.path.join(psychic_learners_dir, 'data', f'{BIG_CATEGORY}_train_split.txt')
     valid_data = os.path.join(psychic_learners_dir, 'data', f'{BIG_CATEGORY}_valid_split.txt')
     
-    params = list(range(12,16,1))
+    params = list(range(1,5,1))
     best_param = 0
     best_accuracy = 0
     for param in params:
         print('CURRENT PARAM: ', param)
         model = train_supervised(
-            input=train_data, epoch=param, lr=0.1, dim=100,
-            wordNgrams=2, verbose=2, ws=7, lrUpdateRate=100,
+            input=train_data, epoch=8, lr=0.1, dim=120,
+            wordNgrams=6, verbose=2, ws=8, lrUpdateRate=100,
         )
         correct = 0
         total = 0
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         if accuracy > best_accuracy:
             best_accuracy = accuracy
             best_param = param
-        model.save_model("mobile_extractions_model{}.bin".format(param))
+        #model.save_model("mobile_extractions_model{}.bin".format(param))
     print(f'Best accuracy {best_accuracy}')
     print(f'Best param: {best_param}')
         

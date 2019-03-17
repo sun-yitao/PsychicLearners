@@ -148,13 +148,13 @@ if BIG_CATEGORY == 'mobile':
 elif BIG_CATEGORY == 'fashion':
     MODEL_INPUT_SHAPE = (2048 + 840)
 elif BIG_CATEGORY == 'beauty':
-    MODEL_INPUT_SHAPE = ( + 840)
+    MODEL_INPUT_SHAPE = (1536 + 840)
 
 
 class DataGenerator(keras.utils.Sequence):
-    #TODO change dims
-    # Usage: train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
-    """x: concat features y:onehotencoded"""
+    """Usage: train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
+        x: concat features y:onehotencoded"""
+
     def __init__(self, x, y, batch_size=64, dim=MODEL_INPUT_SHAPE,
                  n_classes=N_CLASSES, shuffle=True):
         'Initialization'
@@ -214,14 +214,14 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
         x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(x)
         x = layers.PReLU()(x)
         x = layers.Dropout(dropout)(x)
-    predictions = layers.Dense(N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(x)
+    predictions = layers.Dense(N_CLASSES, activation='softmax')(x)
     model = keras.models.Model(inputs=input_tensor, outputs=predictions)
     return model
 
 def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1, 
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
                          model_name='1'):
-    combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001)
+    combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
@@ -233,9 +233,6 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
     reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.2, patience=5,
                                                   verbose=1, mode='auto',
                                                   cooldown=0, min_lr=0)
-    log_dir = "logs_fashion/combined_model_{}".format(model_name)
-    os.makedirs(log_dir, exist_ok=True)
-    tensorboard = keras.callbacks.TensorBoard(log_dir)
 
 
     combined_model.compile(optimizer=sgd,
@@ -248,9 +245,16 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
     #class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
     combined_model.fit_generator(train_datagen, steps_per_epoch=len(train_datagen), epochs=1000,
                                  validation_data=valid_datagen, validation_steps=len(valid_datagen),
-                                 callbacks=[ckpt, reduce_lr, tensorboard])#class_weight=class_weights)
+                                 callbacks=[ckpt, reduce_lr])#class_weight=class_weights)
 
 if __name__ == '__main__':
-    get_features(TRAIN_CSV, subset='train')
-    get_features(VALID_CSV, subset='valid')
-    get_features(TEST_CSV, subset='test')
+    #get_features(TRAIN_CSV, subset='train')
+    #get_features(VALID_CSV, subset='valid')
+    #get_features(TEST_CSV, subset='test')
+    train = pd.read_csv(TRAIN_CSV)
+    valid = pd.read_csv(VALID_CSV)
+    test = pd.read_csv(TEST_CSV)
+    train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
+    train_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
+    batch = train_datagen.next()
+    print(batch.shape)

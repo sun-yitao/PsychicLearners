@@ -4,7 +4,7 @@ import pandas as pd
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_dir = os.path.join(psychic_learners_dir, 'data')
-big_category = 'beauty'
+big_category = 'fashion'
 train = pd.read_csv(os.path.join(data_dir, big_category + '_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_dir, big_category + '_valid_split.csv'))
 #test = pd.read_csv(os.path.join(data_dir, big_category + '_test_split.csv'))
