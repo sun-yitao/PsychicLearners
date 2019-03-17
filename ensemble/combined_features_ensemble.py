@@ -39,8 +39,7 @@ BATCH_SIZE = 64
 WORD_MAX_LEN = 15
 
 image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-image_model = image_model.layers[:-1]
-image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.output)
+image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.layers[-1])
 print(image_model.summary())
 
 with open("word_dict.pickle", "rb") as f:
