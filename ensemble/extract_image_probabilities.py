@@ -46,7 +46,7 @@ test_df['image_filename'] = test_df['image_path'].map(get_image_name)
 print(valid_df['image_filename'].head(5))
 valid_datagen = ImageDataGenerator(rescale=1/255)
 test_datagen = ImageDataGenerator(rescale=1/255)
-valid = valid_datagen.flow_from_dataframe(valid_df, directory=VALID_IMAGE_DIR, x_col='image_filename', y_col=None,
+valid = valid_datagen.flow_from_dataframe(valid_df, directory=VALID_IMAGE_DIR + '/', x_col='image_filename', y_col=None,
                                           target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode=None,
                                           batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
 test = test_datagen.flow_from_dataframe(test_df, directory=TEST_IMAGE_DIR, x_col='image_filename', y_col=None,
