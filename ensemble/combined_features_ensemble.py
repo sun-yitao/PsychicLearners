@@ -25,11 +25,11 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
+BIG_CATEGORY = 'beauty'
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' /
-                       'keras_checkpoints' / BIG_CATEGORY / 'model_3_checkpoints' /'model.39-0.53.h5')
+                       'keras_checkpoints' / BIG_CATEGORY / 'converted_model.h5')
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / 'word_cnn' / '0.6231177957644456.ckpt-208000')
+                      BIG_CATEGORY / 'word_cnn' / '0.7805109797045588.ckpt-382000')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
@@ -38,7 +38,7 @@ VAL_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / 
 TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' /  'test_240x240' / 'test_240x240')
 FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
-N_CLASSES = 14
+N_CLASSES = 17
 BATCH_SIZE = 128
 WORD_MAX_LEN = 15
 os.makedirs(FEATURES_DIR, exist_ok=True)
@@ -247,4 +247,3 @@ if __name__ == '__main__':
     get_features(TRAIN_CSV, subset='train')
     get_features(VALID_CSV, subset='valid')
     get_features(TEST_CSV, subset='test')
-    #get_valid_features()
