@@ -12,11 +12,11 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'mobile'
 ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
 MODEL_NAME = 'char_cnn'
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / MODEL_NAME / '0.7471570342646113.ckpt-32000')
+                      BIG_CATEGORY / MODEL_NAME / '0.7740911354581673.ckpt-20000')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')

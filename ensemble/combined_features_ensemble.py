@@ -45,7 +45,8 @@ os.makedirs(FEATURES_DIR, exist_ok=True)
 
 image_model = keras.models.load_model(IMAGE_MODEL_PATH)
 image_model.layers.pop()
-image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
+image_model.layers.pop()
+image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-2].output)
 print(image_model.summary())
 
 with open("word_dict.pickle", "rb") as f:
@@ -143,7 +144,7 @@ def get_features(csv, subset):
 
 
 
-MODEL_INPUT_SHAPE = (2048)
+MODEL_INPUT_SHAPE = (1536 + 700)
 class DataGenerator(keras.utils.Sequence):
     #TODO change dims
     # Usage: train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
