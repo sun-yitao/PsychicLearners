@@ -207,11 +207,11 @@ class DataGenerator(keras.utils.Sequence):
 def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001):
     k_regularizer = keras.regularizers.l2(k_reg)
     input_tensor = keras.layers.Input(shape=MODEL_INPUT_SHAPE)
-    x = layers.Dense(dense1, activation=None, kernel_initializer='he_uniform')(input_tensor)
+    x = layers.Dense(dense1, activation=None, kernel_initializer='he_uniform', kernel_regularizer=k_regularizer)(input_tensor)
     x = layers.PReLU()(x)
     x = layers.Dropout(dropout)(x)
     if dense2:
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform')(x)
+        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform', kernel_regularizer=k_regularizer)(x)
         x = layers.PReLU()(x)
         x = layers.Dropout(dropout)(x)
     predictions = layers.Dense(N_CLASSES, activation='softmax')(x)
@@ -221,7 +221,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
 def train_combined_model(train_gen, val_gen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1'):
-    combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0)
+    combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.5, k_reg=0.00001)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
