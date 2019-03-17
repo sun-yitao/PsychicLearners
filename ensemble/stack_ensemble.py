@@ -22,13 +22,14 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'mobile'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
-N_CLASSES = 17
-N_MODELS = 2
+N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
+N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
+N_MODELS = 3
 BATCH_SIZE = 64
 
 def read_probabilties(proba_folder, subset='valid',
@@ -119,14 +120,14 @@ def predict(model_path, big_category):
 
 def predict_all():
     beauty_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_fasttext_2_checkpoints/model.08-0.79.h5', big_category='beauty')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_fasttext_2+image_checkpoints/model.18-0.79.h5', big_category='beauty')
     beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
     beauty_preds = pd.DataFrame(data={'itemid':beauty_test['itemid'].values, 
                                       'Category': beauty_preds})
     
     fashion_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_fasttext_2_checkpoints/model.23-0.65.h5', big_category='fashion')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_fasttext_2+image_checkpoints/model.10-0.66.h5', big_category='fashion')
     fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
     fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
@@ -134,7 +135,7 @@ def predict_all():
                                        'Category': fashion_preds})
 
     mobile_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_fasttext_2_checkpoints/model.15-0.83.h5', big_category='mobile')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_fasttext_2+image_checkpoints/model.12-0.83.h5', big_category='mobile')
     mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
     mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
@@ -143,13 +144,13 @@ def predict_all():
 
     all_preds = pd.concat([beauty_preds, fashion_preds, mobile_preds], ignore_index=True)
     all_preds.to_csv(str(psychic_learners_dir / 'data' /
-                         'predictions_v2.csv'), index=False)
+                         'predictions_v3.csv'), index=False)
 
 if __name__ == '__main__':
     """
     train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' /
                              'keras_checkpoints' / BIG_CATEGORY / 'combined'),
-          model_name='fasttext_2')"""
+          model_name='fasttext_2+image')"""
 
     predict_all()

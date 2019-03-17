@@ -16,6 +16,7 @@ from keras import layers
 from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
+from tqdm import tqdm
 """Combines text and image features to form one classifier"""
 
 config = tf.ConfigProto()
@@ -25,21 +26,24 @@ K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
 BIG_CATEGORY = 'mobile'
-IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'inceptres_imagent_weights' / 'mobile_epoch9_70.h5')
-TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / 'word_cnn' / '0.8223667828685259.ckpt-686000')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
-VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
-TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
-IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'train_240x240')
+IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'mobile_epoch9_70.h5')
+TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'word_cnn' / '0.8223667828685259.ckpt-686000')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_train_split.csv')
+VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
+TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
+TRAIN_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'v1_train_240x240' / BIG_CATEGORY)
+VAL_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / BIG_CATEGORY)
+TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'test_240x240')
 FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 27
 BATCH_SIZE = 64
 WORD_MAX_LEN = 15
+os.makedirs(FEATURES_DIR, exist_ok=True)
 
 image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.layers[-1])
+image_model.layers.pop()
+image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
 print(image_model.summary())
 
 with open("word_dict.pickle", "rb") as f:
@@ -79,7 +83,7 @@ def extract_and_save_text_features(titles, itemid_array):
             saver.restore(sess, TEXT_MODEL_PATH)
 
             x = graph.get_operation_by_name("x").outputs[0]
-            y = graph.get_operation_by_name("loss/gradients/embedding/embedding_lookup_grad/Reshape_1").outputs[0]
+            y = graph.get_operation_by_name("Reshape").outputs[0]
             is_training = graph.get_operation_by_name("is_training").outputs[0]
 
             batches = batch_iter(test_x, BATCH_SIZE)
@@ -104,27 +108,33 @@ def save_image_features(features, itemids):
         np.save(output_path, feature)
 
 
-def get_features(csv, test=False):
+def get_features(csv, subset):
     """Extracts and saves text and image features"""
     df = pd.read_csv(csv)
-    steps = len(df) / BATCH_SIZE
-    for batch in np.array_split(df, steps):
-        np_image_array = np.empty(BATCH_SIZE, IMAGE_SIZE[0], IMAGE_SIZE[1], 3)
+    steps = (len(df) / BATCH_SIZE) + 1
+    for batch in tqdm(np.array_split(df, steps)):
+        np_image_array = np.empty((BATCH_SIZE, IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
         itemid_array = []
         titles = []
         for n, row in enumerate(batch.itertuples()):
             itemid = row[1]
             title = row[2]
-            if test:
+            if set == 'test':
                 image_path = row[4]
             else:
-                #category = row[3]
+                category = row[3]
                 image_path = row[5]
-            itemid.append(itemid)
+            itemid_array.append(itemid)
             titles.append(title)
-            im = Image.open(os.path.join(IMAGE_DIR, image_path))
+            image_path = os.path.split(image_path)[-1]
+            if subset == 'test':
+                im = Image.open(os.path.join(TEST_IMAGE_DIR, image_path))
+            elif subset == 'valid':
+                im = Image.open(os.path.join(VAL_IMAGE_DIR, str(category), image_path))
+            elif subset == 'train':
+                im = Image.open(os.path.join(TRAIN_IMAGE_DIR, str(category), image_path))
             np_image_array[n] = img_to_array(im)
-
+        print(np_image_array.shape)
         image_features = image_model.predict(np_image_array, batch_size=len(batch))
         save_image_features(image_features, itemid_array)
         extract_and_save_text_features(titles, itemid_array)
@@ -232,7 +242,7 @@ def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
                                  callbacks=[ckpt, reduce_lr, tensorboard])#class_weight=class_weights)
 
 if __name__ == '__main__':
-    get_features(TRAIN_CSV)
-    get_features(VALID_CSV)
-    get_features(TEST_CSV, test=True)
+    get_features(TRAIN_CSV, subset='train')
+    get_features(VALID_CSV, subset='valid')
+    get_features(TEST_CSV, subset='test')
     #get_valid_features()
