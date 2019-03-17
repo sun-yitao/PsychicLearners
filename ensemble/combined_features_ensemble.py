@@ -120,7 +120,7 @@ def get_features(csv, subset):
             itemid = row[1]
             title = row[2]
             if subset == 'test':
-                image_path = row[4]
+                image_path = row[3]
             else:
                 category = row[3]
                 image_path = row[5]
