@@ -20,9 +20,9 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                       BIG_CATEGORY / 'converted_model.h5')
+                       BIG_CATEGORY / 'model_xception_imagenet_classweights_checkpoints' / 'model.08-0.53.h5')
 VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
 VALID_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / BIG_CATEGORY)
@@ -30,7 +30,7 @@ TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' /
                      'test_240x240' / 'test_240x240')
 ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
 IMAGE_SIZE = (240, 240)
-N_CLASSES = 17
+N_CLASSES = 14
 BATCH_SIZE = 64
 
 def get_image_name(filepath):

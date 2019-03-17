@@ -2,20 +2,20 @@ import os
 from multiprocessing import cpu_count
 from pathlib import Path
 import pickle
+import re
 
 from PIL import Image
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils.class_weight import compute_class_weight
+from nltk.tokenize import word_tokenize
 
 import keras
 from keras import layers
 from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
-
-from data_utils import build_word_dataset, batch_iter
 """Combines text and image features to form one classifier"""
 
 config = tf.ConfigProto()
@@ -36,83 +36,73 @@ FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 27
 BATCH_SIZE = 64
+WORD_MAX_LEN = 15
 
-#image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-#image_model = image_model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
-#image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.output)
-#print(image_model.summary())
-
-graph = tf.Graph()
-with graph.as_default():
-    with tf.Session() as sess:
-        saver = tf.train.import_meta_graph("{}.meta".format(TEXT_MODEL_PATH))
-        saver.restore(sess, TEXT_MODEL_PATH)
-        for op in graph.get_operations():
-            print(str(op.name))
+image_model = keras.models.load_model(IMAGE_MODEL_PATH)
+image_model = image_model.layers[:-1]
+image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.output)
+print(image_model.summary())
 
 with open("word_dict.pickle", "rb") as f:
     word_dict = pickle.load(f)
+
+def build_word_dataset(titles, word_dict, document_max_len):
+    df = pd.DataFrame(data={'title': titles})
+    x = list(map(lambda d: word_tokenize(clean_str(d)), df["title"]))
+    x = list(map(lambda d: list(map(lambda w: word_dict.get(w, word_dict["<unk>"]), d)), x))
+    x = list(map(lambda d: d + [word_dict["<eos>"]], x))
+    x = list(map(lambda d: d[:document_max_len], x))
+    x = list(map(lambda d: d + (document_max_len - len(d)) * [word_dict["<pad>"]], x))
+    return x
+
+def clean_str(text):
+    text = re.sub(r"[^A-Za-z0-9]", " ", text)
+    text = re.sub(r"\s{2,}", " ", text)
+    text = text.strip().lower()
+    return text
+
+def batch_iter(inputs, batch_size):
+    inputs = np.array(inputs)
+    num_batches_per_epoch = (len(inputs) - 1) // batch_size + 1
+    for batch_num in range(num_batches_per_epoch):
+        start_index = batch_num * batch_size
+        end_index = min((batch_num + 1) * batch_size, len(inputs))
+        yield inputs[start_index:end_index]
+
+def extract_and_save_text_features(titles, itemid_array):
+    """titles: array of titles"""
+    test_x = build_word_dataset(titles, word_dict, WORD_MAX_LEN)
+    graph = tf.Graph()
+    all_text_features = []
+    with graph.as_default():
+        with tf.Session() as sess:
+            saver = tf.train.import_meta_graph("{}.meta".format(TEXT_MODEL_PATH))
+            saver.restore(sess, TEXT_MODEL_PATH)
+
+            x = graph.get_operation_by_name("x").outputs[0]
+            y = graph.get_operation_by_name("loss/gradients/embedding/embedding_lookup_grad/Reshape_1").outputs[0]
+            is_training = graph.get_operation_by_name("is_training").outputs[0]
+
+            batches = batch_iter(test_x, BATCH_SIZE)
+            for batch_x in batches:
+                feed_dict = {
+                    x: batch_x,
+                    is_training: False
+                }
+
+                text_features = sess.run(y, feed_dict=feed_dict)
+                print('Text features shape: ', text_features.shape)
+                for text_feature in text_features:
+                    all_text_features.append(text_feature)
+    for text_feature, itemid in zip(all_text_features, itemid_array):
+        output_path = str(FEATURES_DIR / f'{itemid}_text_feature.npy')
+        np.save(output_path, text_feature)
+
 
 def save_image_features(features, itemids):
     for feature, itemid in zip(features, itemids):
         output_path = str(FEATURES_DIR / f'{itemid}_image_feature.npy')
         np.save(output_path, feature)
-
-
-def build_word_dataset(step, word_dict, document_max_len):
-    if step == "train":
-        df = pd.read_csv(TRAIN_PATH)
-    elif step == "valid":
-        df = pd.read_csv(VALID_PATH)
-    else:
-        df = pd.read_csv(TEST_PATH)
-
-    # Shuffle dataframe
-    df = df.sample(frac=1)
-    x = list(map(lambda d: word_tokenize(clean_str(d)), df["title"]))
-    x = list(
-        map(lambda d: list(map(lambda w: word_dict.get(w, word_dict["<unk>"]), d)), x))
-    x = list(map(lambda d: d + [word_dict["<eos>"]], x))
-    x = list(map(lambda d: d[:document_max_len], x))
-    x = list(map(lambda d: d + (document_max_len - len(d))
-                 * [word_dict["<pad>"]], x))
-
-    y = list(map(lambda d: d-17, list(df["Category"])))
-
-    return x, y
-
-def extract_and_save_text_features(titles, itemid_array):
-    test_x, test_y = build_word_dataset("test", word_dict, WORD_MAX_LEN)
-    checkpoint_file = TEXT_MODEL_PATH
-    graph = tf.Graph()
-    with graph.as_default():
-        with tf.Session() as sess:
-            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
-            saver.restore(sess, checkpoint_file)
-
-            x = graph.get_operation_by_name("x").outputs[0]
-            y = graph.get_operation_by_name("y").outputs[0]
-            is_training = graph.get_operation_by_name("is_training").outputs[0]
-            accuracy = graph.get_operation_by_name("accuracy/accuracy").outputs[0]
-
-            batches = batch_iter(test_x, test_y, BATCH_SIZE, 1)
-            sum_accuracy, cnt = 0, 0
-            for batch_x, batch_y in batches:
-                feed_dict = {
-                    x: batch_x,
-                    y: batch_y,
-                    is_training: False
-                }
-
-                accuracy_out = sess.run(accuracy, feed_dict=feed_dict)
-                sum_accuracy += accuracy_out
-                cnt += 1
-
-            print("Test Accuracy : {0}".format(sum_accuracy / cnt))
-
-    output_path = str(FEATURES_DIR / f'{itemid}_text_feature.npy')
-    np.save(output_path, feature)
-    pass
 
 
 def get_features(csv, test=False):
