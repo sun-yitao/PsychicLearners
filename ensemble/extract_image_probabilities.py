@@ -31,7 +31,7 @@ TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' /
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 17
-BATCH_SIZE = 1
+BATCH_SIZE = 64
 
 def get_image_name(filepath):
     image_name = os.path.split(filepath)[-1]
