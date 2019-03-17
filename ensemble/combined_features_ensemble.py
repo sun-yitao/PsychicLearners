@@ -33,7 +33,8 @@ VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_
 TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
 TRAIN_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'v1_train_240x240' / BIG_CATEGORY)
 VAL_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / BIG_CATEGORY)
-TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'test_240x240')
+TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' /
+                     'test_240x240' / 'test_240x240')
 FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 27
