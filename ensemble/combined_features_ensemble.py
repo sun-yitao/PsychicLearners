@@ -46,7 +46,7 @@ os.makedirs(FEATURES_DIR, exist_ok=True)
 image_model = keras.models.load_model(IMAGE_MODEL_PATH)
 image_model.layers.pop()
 image_model.layers.pop()
-image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-2].output)
+image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
 print(image_model.summary())
 
 with open("word_dict.pickle", "rb") as f:
@@ -97,7 +97,6 @@ def extract_and_save_text_features(titles, itemid_array):
                 }
 
                 text_features = sess.run(y, feed_dict=feed_dict)
-                print('Text features shape: ', text_features.shape)
                 for text_feature in text_features:
                     all_text_features.append(text_feature)
     for text_feature, itemid in zip(all_text_features, itemid_array):
@@ -139,12 +138,19 @@ def get_features(csv, subset):
             np_image_array[n] = img_to_array(im)
         print(np_image_array.shape)
         image_features = image_model.predict(np_image_array, batch_size=len(batch))
+        print(f'Image feature shape {image_features.shape}')
         save_image_features(image_features, itemid_array)
         extract_and_save_text_features(titles, itemid_array)
 
 
+if BIG_CATEGORY == 'mobile':
+    MODEL_INPUT_SHAPE = (1536 + 700)
+elif BIG_CATEGORY == 'fashion':
+    MODEL_INPUT_SHAPE = (2048 + 840)
+elif BIG_CATEGORY == 'beauty':
+    MODEL_INPUT_SHAPE = ( + 840)
 
-MODEL_INPUT_SHAPE = (1536 + 700)
+
 class DataGenerator(keras.utils.Sequence):
     #TODO change dims
     # Usage: train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
