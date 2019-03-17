@@ -219,7 +219,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
     return model
 
 def train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1, 
-                         checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
+                         checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1'):
     combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0)
     decay = lr_base/(epochs * lr_decay_factor)
@@ -251,10 +251,10 @@ if __name__ == '__main__':
     #get_features(TRAIN_CSV, subset='train')
     #get_features(VALID_CSV, subset='valid')
     #get_features(TEST_CSV, subset='test')
-    train = pd.read_csv(TRAIN_CSV)
-    valid = pd.read_csv(VALID_CSV)
     test = pd.read_csv(TEST_CSV)
     train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
     train_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
-    batch = train_datagen.next()
-    print(batch.shape)
+
+    train_combined_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
+                         checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
+                         model_name='1')
