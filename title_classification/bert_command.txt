@@ -7,15 +7,32 @@ python run_classifier.py \
   --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/fashion \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1/model.ckpt-20596 \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1/model.ckpt-34328 \
   --max_seq_length=16 \
   --train_batch_size=512 \
   --eval_batch_size=512 \
   --learning_rate=0.00005 \
-  --num_train_epochs=100 \
+  --num_train_epochs=110 \
   --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1
 
   --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+
+python run_classifier.py \
+  --task_name=mobile \
+  --do_train=true \
+  --do_eval=true \
+  --do_lower_case=True \
+  --do_print_test=True \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/mobile \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+  --max_seq_length=16 \
+  --train_batch_size=512 \
+  --eval_batch_size=512 \
+  --learning_rate=0.00005 \
+  --num_train_epochs=60 \
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/mobile_exp1
 
 python extract_features.py \
   --input_file=/home/paperspace/PsychicLearners/data/fashion_train_sentences.txt \

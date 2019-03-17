@@ -1,6 +1,7 @@
 import os
 from multiprocessing import cpu_count
 from pathlib import Path
+import pickle
 
 from PIL import Image
 import pandas as pd
@@ -13,6 +14,8 @@ from keras import layers
 from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
+
+from data_utils import build_word_dataset, batch_iter
 """Combines text and image features to form one classifier"""
 
 config = tf.ConfigProto()
@@ -21,23 +24,34 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
-IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'MODEL NAME' / 'model.h5')
-TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'MODEL NAME' / 'model.h5')
+BIG_CATEGORY = 'mobile'
+IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'inceptres_imagent_weights' / 'mobile_epoch9_70.h5')
+TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
+                      BIG_CATEGORY / 'word_cnn' / '0.8223667828685259.ckpt-686000')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
 IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'train_240x240')
 FEATURES_DIR = psychic_learners_dir / 'data'/ 'features' / BIG_CATEGORY
 IMAGE_SIZE = (240, 240)
-N_CLASSES = 14
+N_CLASSES = 27
 BATCH_SIZE = 64
 
-image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-image_model = image_model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
-print(image_model.summary())
-text_model = keras.models.load_model(TEXT_MODEL_PATH) #TODO load model for tf
-text_model = text_model.layers[:-1]
+#image_model = keras.models.load_model(IMAGE_MODEL_PATH)
+#image_model = image_model.layers[:-1]  # TODO FIND CORRECT NUMBER OF LAYERS
+#image_model = keras.models.Model(inputs=image_model.layers[0], outputs=image_model.output)
+#print(image_model.summary())
+
+graph = tf.Graph()
+with graph.as_default():
+    with tf.Session() as sess:
+        saver = tf.train.import_meta_graph("{}.meta".format(TEXT_MODEL_PATH))
+        saver.restore(sess, TEXT_MODEL_PATH)
+        for op in graph.get_operations():
+            print(str(op.name))
+
+with open("word_dict.pickle", "rb") as f:
+    word_dict = pickle.load(f)
 
 def save_image_features(features, itemids):
     for feature, itemid in zip(features, itemids):
@@ -45,20 +59,31 @@ def save_image_features(features, itemids):
         np.save(output_path, feature)
 
 
-def extract_and_save_text_features(titles, itemid_array):
-    if args.model == "char_cnn":
-        test_x, test_y, alphabet_size = build_char_dataset(
-            "test", "char_cnn", CHAR_MAX_LEN)
-
-
-    elif args.model == "vd_cnn":
-        test_x, test_y, alphabet_size = build_char_dataset(
-            "test", "vdcnn", CHAR_MAX_LEN)
+def build_word_dataset(step, word_dict, document_max_len):
+    if step == "train":
+        df = pd.read_csv(TRAIN_PATH)
+    elif step == "valid":
+        df = pd.read_csv(VALID_PATH)
     else:
-        word_dict = build_word_dict()
-        test_x, test_y = build_word_dataset("test", word_dict, WORD_MAX_LEN)
+        df = pd.read_csv(TEST_PATH)
 
-    checkpoint_file = tf.train.latest_checkpoint(args.model)
+    # Shuffle dataframe
+    df = df.sample(frac=1)
+    x = list(map(lambda d: word_tokenize(clean_str(d)), df["title"]))
+    x = list(
+        map(lambda d: list(map(lambda w: word_dict.get(w, word_dict["<unk>"]), d)), x))
+    x = list(map(lambda d: d + [word_dict["<eos>"]], x))
+    x = list(map(lambda d: d[:document_max_len], x))
+    x = list(map(lambda d: d + (document_max_len - len(d))
+                 * [word_dict["<pad>"]], x))
+
+    y = list(map(lambda d: d-17, list(df["Category"])))
+
+    return x, y
+
+def extract_and_save_text_features(titles, itemid_array):
+    test_x, test_y = build_word_dataset("test", word_dict, WORD_MAX_LEN)
+    checkpoint_file = TEXT_MODEL_PATH
     graph = tf.Graph()
     with graph.as_default():
         with tf.Session() as sess:

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from multiprocessing import cpu_count
 
 from PIL import Image
 import pandas as pd
@@ -21,9 +22,9 @@ K.set_session(session)
 psychic_learners_dir = Path.cwd().parent
 BIG_CATEGORY = 'beauty'
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                       BIG_CATEGORY / 'inceptres_imagenet_classweights' / 'model.62-0.67.h5')
-VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
-TEST_CSV = str(psychic_learners_dir / 'data' /  f'{BIG_CATEGORY}_test_split.csv')
+                       BIG_CATEGORY / 'converted_model.h5')
+VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
+TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
 VALID_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / BIG_CATEGORY)
 TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'test_240x240')
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
@@ -52,10 +53,11 @@ test = test_datagen.flow_from_dataframe(test_df, directory=TEST_IMAGE_DIR, x_col
                                         batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic', drop_duplicates=False)
 
 model = keras.models.load_model(IMAGE_MODEL_PATH)
-valid_preds = model.predict(valid, batch_size=BATCH_SIZE, verbose=2, steps=len(valid))
-test_preds = model.predict(test, batch_size=BATCH_SIZE, verbose=2, steps=len(test))
+valid_preds = model.predict_generator(valid, steps=len(valid), workers=cpu_count(), use_multiprocessing=True, verbose=1)
+test_preds = model.predict_generator(test, steps=len(test), workers=cpu_count(), use_multiprocessing=True, verbose=1)
 print(valid_preds.shape)
 print(test_preds.shape)
+os.makedirs(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / 'image_model'))
 np.save(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / 'image_model' / 'valid.npy'), valid_preds)
 np.save(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / 'image_model' / 'test.npy'), test_preds)
 

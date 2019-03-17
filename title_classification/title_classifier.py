@@ -10,9 +10,12 @@ from sklearn import model_selection, preprocessing, linear_model, naive_bayes, m
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn import decomposition, ensemble
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
-from mlens.ensemble import SuperLearner
+from sklearn.metrics import accuracy_score
+from mlens.ensemble import BlendEnsemble
 
 import keras
 from keras.preprocessing import text, sequence
@@ -30,8 +33,9 @@ RANDOM_STATE = 42
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
-train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
-valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))
+BIG_CATEGORY = 'fashion'
+train = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_train_split.csv'))
+valid = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_valid_split.csv'))
 train_x, train_y = train['title'], train['Category']
 valid_x, valid_y = valid['title'], valid['Category']
 """
@@ -198,10 +202,30 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
                                                                      tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
 print("LR, N-Gram Vectors: ", accuracy)"""
+seed = 2017
+np.random.seed(seed)
+ensemble = BlendEnsemble(scorer=accuracy_score, random_state=seed, verbose=2)
+ensemble.add([
+    RandomForestClassifier(n_estimators=100, max_depth=58*10, min_samples_leaf=10),  
+    #svm.LinearSVC(dual=False, tol=.01),
+    LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial', tol=1e-4, C=1.e4 / 533292),
+    naive_bayes.MultinomialNB(),
+    xgboost.XGBClassifier(max_depth=11, learning_rate=0.1, scale_pos_weight=1,
+                          n_estimators=100, silent=True,
+                          objective="binary:logistic", booster='gbtree',
+                          n_jobs=6, nthread=None, gamma=0, min_child_weight=2,
+                          max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                          reg_alpha=0, reg_lambda=1),
+], proba=True)
 
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.01)), 
+# Attach the final meta estimator
+ensemble.add_meta(LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                     tol=1e-4, C=1.e4 / 533292))
+
+
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, ensemble), 
                         train_x, train_y, valid_x)
-print("SVM, N-Gram Vectors: ", accuracy)
+print("Ensemble: ", accuracy)
 """
 # RF on Count Vectors
 
@@ -213,6 +237,7 @@ print("RF, Count Vectors: ", accuracy)
 accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=50, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
 print("RF, WordLevel TF-IDF: ", accuracy)"""
+"""
 params = {
     'max_depth': [9, 11, 13],
     #'learning_rate': [0.05, 0.1, 0.2],
@@ -244,7 +269,7 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=xg
                                                                     param_grid=params, scoring='accuracy', n_jobs=-1)),
                                                                     train_x, train_y, valid_x)
 print("Xgb, N-Gram Vectors: ", accuracy)
-
+"""
 """
 def create_model_architecture(input_size):
     # create input layer
