@@ -137,6 +137,7 @@ def get_features(csv, subset):
                 im = Image.open(os.path.join(TRAIN_IMAGE_DIR, str(category), image_path))
             np_image_array[n] = img_to_array(im)
         print(np_image_array.shape)
+        np_image_array = np_image_array / 255
         image_features = image_model.predict(np_image_array, batch_size=len(batch))
         print(f'Image feature shape {image_features.shape}')
         save_image_features(image_features, itemid_array)
@@ -242,9 +243,10 @@ def train_combined_model(train_gen, val_gen, lr_base=0.01, epochs=50, lr_decay_f
                                  callbacks=[ckpt, reduce_lr])#class_weight=class_weights)
 
 if __name__ == '__main__':
-    #get_features(TRAIN_CSV, subset='train')
-    #get_features(VALID_CSV, subset='valid')
-    #get_features(TEST_CSV, subset='test')
+    get_features(TRAIN_CSV, subset='train')
+    get_features(VALID_CSV, subset='valid')
+    get_features(TEST_CSV, subset='test')
+    """
     train = pd.read_csv(TRAIN_CSV)
     valid = pd.read_csv(VALID_CSV)
     test = pd.read_csv(TEST_CSV)
@@ -253,4 +255,4 @@ if __name__ == '__main__':
 
     train_combined_model(train_datagen, valid_datagen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
-                         model_name='1')
+                         model_name='1')"""
