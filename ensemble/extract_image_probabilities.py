@@ -56,8 +56,8 @@ test = test_datagen.flow_from_dataframe(test_df, directory=TEST_IMAGE_DIR, x_col
                                         batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
 
 model = keras.models.load_model(IMAGE_MODEL_PATH)
-valid_preds = model.predict_generator(valid, steps=len(valid), workers=cpu_count(), use_multiprocessing=True, verbose=1)
-test_preds = model.predict_generator(test, steps=len(test), workers=cpu_count(), use_multiprocessing=True, verbose=1)
+valid_preds = model.predict_generator(valid, steps=len(valid), workers=1, use_multiprocessing=False, verbose=1)
+test_preds = model.predict_generator(test, steps=len(test), workers=1, use_multiprocessing=False, verbose=1)
 print(valid_preds.shape)
 print(test_preds.shape)
 os.makedirs(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / 'image_model'))
