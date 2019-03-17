@@ -28,7 +28,7 @@ TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_sp
 VALID_IMAGE_DIR = str(psychic_learners_dir / 'data' / 'image' / 'valid_240x240' / BIG_CATEGORY)
 TEST_IMAGE_DIR = str(psychic_learners_dir / 'data' /
                      'test_240x240' / 'test_240x240')
-ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
+ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
 IMAGE_SIZE = (240, 240)
 N_CLASSES = 17
 BATCH_SIZE = 64
