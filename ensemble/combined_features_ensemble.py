@@ -254,6 +254,8 @@ if __name__ == '__main__':
     train, valid = train_test_split(valid_df,
                                     stratify=valid_df['Category'],
                                     test_size=0.25, random_state=42)
+    print(train.shape)
+    print(valid.shape)
     train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
     valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
 
