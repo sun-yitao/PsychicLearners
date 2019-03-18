@@ -34,10 +34,13 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 BIG_CATEGORY = 'fashion'
+prob_dir = os.path.join(data_directory, 'probabilities', BIG_CATEGORY)
 train = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_valid_split.csv'))
+test = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_test_split.csv'))
 train_x, train_y = train['title'], train['Category']
 valid_x, valid_y = valid['title'], valid['Category']
+test_x = test['title']
 """
 samplers = [
     ['Random_Undersample', RandomUnderSampler(random_state=RANDOM_STATE)],
@@ -152,7 +155,8 @@ for i, topic_dist in enumerate(topic_word):
         topic_dist)][:-(n_top_words+1):-1]
     topic_summaries.append(' '.join(topic_words)) """
 
-def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False):
+def train_model(classifier, feature_vector_train, label, feature_vector_valid, 
+                is_neural_net=False, extract_probs=False, feature_vector_test=None, model_name='sklearn'):
     # fit the training dataset on the classifier
     if isinstance(classifier, xgboost.XGBClassifier):
         feature_vector_train = feature_vector_train.to_csc()
@@ -162,6 +166,13 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
     predictions = classifier.predict(feature_vector_train)
     print('Train Acc: {}'.format(metrics.accuracy_score(predictions, label)))
     predictions = classifier.predict(feature_vector_valid)
+    if extract_probs:
+        val_preds = classifier.predict_proba(feature_vector_valid)
+        test_preds = classifier.predict_proba(feature_vector_test)
+        print(val_preds.shape)
+        print(test_preds.shape)
+        np.save(os.path.join(prob_dir, model_name, 'valid.npy'), val_preds)
+        np.save(os.path.join(prob_dir, model_name, 'test.npy'), test_preds)
     if is_neural_net:
         predictions = predictions.argmax(axis=-1)
     return metrics.accuracy_score(predictions, valid_y)
@@ -204,6 +215,7 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
 print("LR, N-Gram Vectors: ", accuracy)
 seed = 2017
 np.random.seed(seed)
+"""
 params = {
     'max_depth': [9, 11, 13],
     #'learning_rate': [0.05, 0.1, 0.2],
@@ -234,7 +246,7 @@ ensemble.add_meta(LogisticRegression(solver='sag', n_jobs=6, multi_class='multin
 
 accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=ensemble),
                                      train_x, train_y, valid_x), param_grid=params, scoring='accuracy', n_jobs=-1)
-print("Ensemble: ", accuracy)
+print("Ensemble: ", accuracy)"""
 """
 # RF on Count Vectors
 
