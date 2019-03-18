@@ -177,7 +177,6 @@ class DataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         batch_indexes = self.indexes[index*self.batch_size:(index+1)*self.batch_size]
-        print(batch_indexes)
         # Find list of IDs
         x_temp = [self.x[i] for i in batch_indexes]
         X = self.__data_generation(x_temp)
@@ -254,8 +253,8 @@ if __name__ == '__main__':
     train, valid = train_test_split(valid_df,
                                     stratify=valid_df['Category'],
                                     test_size=0.25, random_state=42)
-    train_datagen = DataGenerator(x=train['itemid'].values, y=train['Category'].values, batch_size=BATCH_SIZE)
-    valid_datagen = DataGenerator(x=valid['itemid'].values, y=valid['Category'].values, batch_size=BATCH_SIZE)
+    train_datagen = DataGenerator(x=train['itemid'].values, y=train['Category'], batch_size=BATCH_SIZE)
+    valid_datagen = DataGenerator(x=valid['itemid'].values, y=valid['Category'], batch_size=BATCH_SIZE)
 
     train_combined_model(train_datagen, valid_datagen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
