@@ -14,9 +14,9 @@ config.gpu_options.allow_growth = True
 psychic_learners_dir = Path.cwd().parent
 BIG_CATEGORY = 'mobile'
 ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
-MODEL_NAME = 'word_rnn'
+MODEL_NAME = 'rcnn'
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / MODEL_NAME / '0.7861678286852589.ckpt-38000')
+                      BIG_CATEGORY / MODEL_NAME / '0.7975286354581673.ckpt-44000')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
@@ -81,7 +81,7 @@ def extract_and_save_probs(df, subset):
         with tf.Session() as sess:
             saver = tf.train.import_meta_graph("{}.meta".format(TEXT_MODEL_PATH))
             saver.restore(sess, TEXT_MODEL_PATH)
-            #for op in graph.get_operations()[:-750]:
+            #for op in graph.get_operations():
             #    print(str(op.name))
 
             x = graph.get_operation_by_name("x").outputs[0]
@@ -104,7 +104,7 @@ def extract_and_save_probs(df, subset):
     print(f'All probs shape: {all_probs.shape}')
     os.makedirs(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / MODEL_NAME), exist_ok=True)
     np.save(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / MODEL_NAME / f'{subset}.npy'), all_probs)
-    test = all_probs[:5]
+    test = all_probs[:10]
     test = np.argmax(test, axis=1)
     print(test)
 
@@ -119,4 +119,5 @@ if __name__ == '__main__':
 
 char cnn: fc-3/dense/BiasAdd
 word rnn: output/dense/BiasAdd
+rcnn: output/dense/BiasAdd
 """

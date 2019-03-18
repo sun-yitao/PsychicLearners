@@ -166,7 +166,7 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
         predictions = predictions.argmax(axis=-1)
     return metrics.accuracy_score(predictions, valid_y)
 
-"""
+
 # Naive Bayes on Count Vectors
 accuracy = train_model(make_pipeline(count_vect, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
@@ -201,9 +201,18 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
                                      linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
                                                                      tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
-print("LR, N-Gram Vectors: ", accuracy)"""
+print("LR, N-Gram Vectors: ", accuracy)
 seed = 2017
 np.random.seed(seed)
+params = {
+    'max_depth': [9, 11, 13],
+    #'learning_rate': [0.05, 0.1, 0.2],
+    #'n_estimators': range(50, 200, 50),
+    #'gamma': [i/10.0 for i in range(0, 5)],
+    #'subsample': [i/10.0 for i in range(6, 10)],
+    #'colsample_bytree': [i/10.0 for i in range(6, 10)],
+    #'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05]
+}
 ensemble = BlendEnsemble(scorer=accuracy_score, random_state=seed, verbose=2)
 ensemble.add([
     RandomForestClassifier(n_estimators=100, max_depth=58*10, min_samples_leaf=10),  
@@ -223,8 +232,8 @@ ensemble.add_meta(LogisticRegression(solver='sag', n_jobs=6, multi_class='multin
                                      tol=1e-4, C=1.e4 / 533292))
 
 
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, ensemble), 
-                        train_x, train_y, valid_x)
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=ensemble),
+                                     train_x, train_y, valid_x), param_grid=params, scoring='accuracy', n_jobs=-1)
 print("Ensemble: ", accuracy)
 """
 # RF on Count Vectors

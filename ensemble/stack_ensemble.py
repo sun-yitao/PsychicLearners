@@ -30,14 +30,16 @@ VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
 N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
-N_MODELS = 6
+N_MODELS = 8
 BATCH_SIZE = 64
 model_names = ['char_cnn',
                'extractions_fasttext',
                'image_model',
                'title_fasttext',
                'word_cnn',
-               #'word_rnn',
+               'word_rnn',
+               'rcnn',
+               'bert_v1'
                ]
 
 def read_probabilties(proba_folder, subset='valid',
@@ -70,14 +72,12 @@ def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0):
                          kernel_regularizer=k_regularizer)(input_tensor)
         x = layers.PReLU()(x)
         x = layers.Dropout(dropout)(x)
+        #x = layers.BatchNormalization()(x)
     if dense2:
         x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
                          kernel_regularizer=k_regularizer)(x)
         x = layers.PReLU()(x)
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
-                         kernel_regularizer=k_regularizer)(x)
-        x = layers.PReLU()(x)
-        x = layers.Dropout(dropout)(x)
+        #x = layers.BatchNormalization()(x)
 
     if dense1:
         predictions = layers.Dense(N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(x)
@@ -93,14 +93,14 @@ def train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
           model_name='1'):
     model = ensemble_model(dense1=256, dense2=256,
-                           dropout=0, k_reg=0)
+                           dropout=0.2, k_reg=0.00001)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(
         lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
     # callbacks
     checkpoint_path = os.path.join(
-        checkpoint_dir, 'model_{}_checkpoints'.format(model_name))
+        checkpoint_dir, '{}_checkpoints'.format(model_name))
     os.makedirs(checkpoint_path, exist_ok=True)
     ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
@@ -124,7 +124,7 @@ def train(lr_base=0.01, epochs=50, lr_decay_factor=1,
               callbacks=[ckpt, reduce_lr], validation_data=(X_valid, y_valid),
               shuffle=True, class_weight=None, steps_per_epoch=None, validation_steps=None)
 
-def predict(model_path, big_category):
+def predict(model_path, big_category, model_names=model_names):
     test_x = read_probabilties(proba_folder=os.path.join(
         ROOT_PROBA_FOLDER, big_category), subset='test')
     model = keras.models.load_model(model_path)
@@ -134,14 +134,14 @@ def predict(model_path, big_category):
 
 def predict_all():
     beauty_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_5+word_rnn_checkpoints/model.14-0.79.h5', big_category='beauty')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/7+bert_checkpoints/model.28-0.80.h5', big_category='beauty')
     beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
     beauty_preds = pd.DataFrame(data={'itemid':beauty_test['itemid'].values, 
                                       'Category': beauty_preds})
     
     fashion_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_5+word_rnn_checkpoints/model.12-0.67.h5', big_category='fashion')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/7+bert_checkpoints/model.15-0.68.h5', big_category='fashion')
     fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
     fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
@@ -149,7 +149,7 @@ def predict_all():
                                        'Category': fashion_preds})
 
     mobile_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_5+word_rnn_checkpoints/model.17-0.84.h5', big_category='mobile')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/7+bert_checkpoints/model.16-0.85.h5', big_category='mobile')
     mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
     mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
@@ -158,7 +158,7 @@ def predict_all():
 
     all_preds = pd.concat([beauty_preds, fashion_preds, mobile_preds], ignore_index=True)
     all_preds.to_csv(str(psychic_learners_dir / 'data' / 'predictions' /
-                         '5+word_rnn.csv'), index=False)
+                         '7+bert.csv'), index=False)
 
 def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kaggle_public_acc):
     val_split = 0.25
@@ -175,10 +175,11 @@ if __name__ == '__main__':
     train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' /
                              'keras_checkpoints' / BIG_CATEGORY / 'combined'),
-          model_name='5+word_rnn')"""
+          model_name='7+bert')"""
 
-    #predict_all()
-    print(evaluate_total_accuracy(0.79428, 0.67013, 0.83722, 0.76235))
+    predict_all()
+    #print(evaluate_total_accuracy(0.79651, 0.67459, 0.8366, 0.76235)) #5+wordrnn+rcnn
+    #print(evaluate_total_accuracy(0.79860, 0.67886, 0.84633, 0.76235)) #7+bert
 
 
 """

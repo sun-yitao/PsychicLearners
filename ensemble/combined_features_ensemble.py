@@ -221,7 +221,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
 def train_combined_model(train_gen, val_gen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1'):
-    combined_model = combined_features_model(dense1=1024, dense2=None, dropout=0.5, k_reg=0.00001)
+    combined_model = combined_features_model(dense1=512, dense2=None, dropout=0.5, k_reg=0.00001)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
