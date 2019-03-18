@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.model_selection import train_test_split
 from nltk.tokenize import word_tokenize
 
 import keras
@@ -247,9 +248,12 @@ if __name__ == '__main__':
     #get_features(VALID_CSV, subset='valid')
     #get_features(TEST_CSV, subset='test')
     
-    train = pd.read_csv(TRAIN_CSV)
-    valid = pd.read_csv(VALID_CSV)
-    test = pd.read_csv(TEST_CSV)
+    #train_df = pd.read_csv(TRAIN_CSV)
+    valid_df = pd.read_csv(VALID_CSV)
+    test_df = pd.read_csv(TEST_CSV)
+    train, valid = train_test_split(valid_df,
+                                    stratify=valid_df['Category'],
+                                    test_size=0.25, random_state=42)
     train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
     valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
 

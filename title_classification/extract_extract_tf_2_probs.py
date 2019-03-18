@@ -8,18 +8,23 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
+
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'beauty'
 ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
-MODEL_NAME = 'word_rnn'
+MODEL_NAME = 'adv_abblstm'
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / MODEL_NAME / '0.7861678286852589.ckpt-38000')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_train_split.csv')
-VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_valid_split.csv')
-TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / f'{BIG_CATEGORY}_test_split.csv')
+                      BIG_CATEGORY / MODEL_NAME / '0.7230839018092363.ckpt-189')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' /
+                f'{BIG_CATEGORY}_train_split.csv')
+VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' /
+                f'{BIG_CATEGORY}_valid_split.csv')
+TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' /
+               f'{BIG_CATEGORY}_test_split.csv')
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
 N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
 BATCH_SIZE = 128
@@ -32,7 +37,8 @@ with open(str(psychic_learners_dir / 'ensemble' / "word_dict.pickle"), "rb") as 
 
 def build_word_dataset(df, word_dict, document_max_len):
     x = list(map(lambda d: word_tokenize(clean_str(d)), df["title"]))
-    x = list(map(lambda d: list(map(lambda w: word_dict.get(w, word_dict["<unk>"]), d)), x))
+    x = list(
+        map(lambda d: list(map(lambda w: word_dict.get(w, word_dict["<unk>"]), d)), x))
     x = list(map(lambda d: d + [word_dict["<eos>"]], x))
     x = list(map(lambda d: d[:document_max_len], x))
     x = list(map(lambda d: d + (document_max_len - len(d))
@@ -55,6 +61,7 @@ def build_char_dataset(df, document_max_len):
     x = list(map(lambda d: d + (document_max_len - len(d))
                  * [char_dict["<pad>"]], x))
     return x
+
 
 def clean_str(text):
     text = re.sub(r"[^A-Za-z0-9]", " ", text)
@@ -79,7 +86,8 @@ def extract_and_save_probs(df, subset):
     all_probs = []
     with graph.as_default():
         with tf.Session() as sess:
-            saver = tf.train.import_meta_graph("{}.meta".format(TEXT_MODEL_PATH))
+            saver = tf.train.import_meta_graph(
+                "{}.meta".format(TEXT_MODEL_PATH))
             saver.restore(sess, TEXT_MODEL_PATH)
             #for op in graph.get_operations()[:-750]:
             #    print(str(op.name))
@@ -102,11 +110,14 @@ def extract_and_save_probs(df, subset):
 
     all_probs = np.array(all_probs)
     print(f'All probs shape: {all_probs.shape}')
-    os.makedirs(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / MODEL_NAME), exist_ok=True)
-    np.save(str(ROOT_PROBA_FOLDER / BIG_CATEGORY / MODEL_NAME / f'{subset}.npy'), all_probs)
+    os.makedirs(str(ROOT_PROBA_FOLDER / BIG_CATEGORY /
+                    MODEL_NAME), exist_ok=True)
+    np.save(str(ROOT_PROBA_FOLDER / BIG_CATEGORY /
+                MODEL_NAME / f'{subset}.npy'), all_probs)
     test = all_probs[:5]
     test = np.argmax(test, axis=1)
     print(test)
+
 
 if __name__ == '__main__':
     valid_df = pd.read_csv(VALID_CSV)

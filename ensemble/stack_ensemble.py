@@ -5,7 +5,8 @@ from pathlib import Path
 from PIL import Image
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder, normalize, minmax_scale, robust_scale
+from sklearn.preprocessing import OneHotEncoder, normalize
+from sklearn.model_selection import train_test_split
 
 import keras
 from keras import layers
@@ -29,17 +30,25 @@ VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
 N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
-N_MODELS = 5
+N_MODELS = 6
 BATCH_SIZE = 64
+model_names = ['char_cnn',
+               'extractions_fasttext',
+               'image_model',
+               'title_fasttext',
+               'word_cnn',
+               #'word_rnn',
+               ]
 
 def read_probabilties(proba_folder, subset='valid',
-                      model_names=None):
+                      model_names=model_names):
     proba_folder = Path(proba_folder)
     all_probabilities = []
     for folder in proba_folder.iterdir():
         if not folder.is_dir():
             continue
         elif model_names and folder.name not in model_names:
+            print(folder.name, 'not included')
             continue
         for npy in folder.glob(f'*{subset}.npy'):
             prob = np.load(str(npy))
@@ -105,10 +114,14 @@ def train(lr_base=0.01, epochs=50, lr_decay_factor=1,
     
     train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     train_y = pd.read_csv(VALID_CSV)['Category'].values
+    X_train, X_valid, y_train, y_valid = train_test_split(train_x, train_y,
+                                                           stratify=train_y,
+                                                           test_size=0.25, random_state=42)
     encoder = OneHotEncoder(sparse=False)
-    train_y = encoder.fit_transform(train_y.reshape(-1, 1))
-    model.fit(x=train_x, y=train_y, batch_size=BATCH_SIZE, epochs=1000, verbose=2, 
-              callbacks=[ckpt, reduce_lr], validation_split=0.2,
+    y_train = encoder.fit_transform(y_train.reshape(-1, 1))
+    y_valid = encoder.fit_transform(y_valid.reshape(-1, 1))
+    model.fit(x=X_train, y=y_train, batch_size=BATCH_SIZE, epochs=1000, verbose=2, 
+              callbacks=[ckpt, reduce_lr], validation_data=(X_valid, y_valid),
               shuffle=True, class_weight=None, steps_per_epoch=None, validation_steps=None)
 
 def predict(model_path, big_category):
@@ -121,14 +134,14 @@ def predict(model_path, big_category):
 
 def predict_all():
     beauty_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_4+char_cnn_checkpoints/model.24-0.79.h5', big_category='beauty')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/model_5+word_rnn_checkpoints/model.14-0.79.h5', big_category='beauty')
     beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
     beauty_preds = pd.DataFrame(data={'itemid':beauty_test['itemid'].values, 
                                       'Category': beauty_preds})
     
     fashion_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_4+char_cnn_checkpoints/model.22-0.66.h5', big_category='fashion')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined/model_5+word_rnn_checkpoints/model.12-0.67.h5', big_category='fashion')
     fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
     fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
@@ -136,7 +149,7 @@ def predict_all():
                                        'Category': fashion_preds})
 
     mobile_preds = predict(
-        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_4+char_cnn_checkpoints/model.16-0.84.h5', big_category='mobile')
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined/model_5+word_rnn_checkpoints/model.17-0.84.h5', big_category='mobile')
     mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
     mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
@@ -145,13 +158,36 @@ def predict_all():
 
     all_preds = pd.concat([beauty_preds, fashion_preds, mobile_preds], ignore_index=True)
     all_preds.to_csv(str(psychic_learners_dir / 'data' / 'predictions' /
-                         'predictions_v5.csv'), index=False)
+                         '5+word_rnn.csv'), index=False)
+
+def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kaggle_public_acc):
+    val_split = 0.25
+    total_examples = 57317*val_split + 43941*val_split + 32065*val_split + 172402*0.3
+    num_correct = 57317*val_split*val_beauty_acc + \
+                  43941*val_split*val_fashion_acc + \
+                  32065*val_split*val_mobile_acc + \
+                  172402*0.3*kaggle_public_acc
+    return num_correct/total_examples
+
 
 if __name__ == '__main__':
     """
     train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' /
                              'keras_checkpoints' / BIG_CATEGORY / 'combined'),
-          model_name='4+char_cnn')"""
+          model_name='5+word_rnn')"""
 
-    predict_all()
+    #predict_all()
+    print(evaluate_total_accuracy(0.79428, 0.67013, 0.83722, 0.76235))
+
+
+"""
+Logs
+4+charcnn 0.7629462331932415
+5+wordrnn 0.7628749750297908
+
+
+
+
+
+"""
