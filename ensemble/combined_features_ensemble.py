@@ -248,7 +248,7 @@ if __name__ == '__main__':
     #get_features(VALID_CSV, subset='valid')
     #get_features(TEST_CSV, subset='test')
     
-    #train_df = pd.read_csv(TRAIN_CSV)
+    train_df = pd.read_csv(TRAIN_CSV)
     valid_df = pd.read_csv(VALID_CSV)
     test_df = pd.read_csv(TEST_CSV)
     train, valid = train_test_split(valid_df,
@@ -256,8 +256,10 @@ if __name__ == '__main__':
                                     test_size=0.25, random_state=42)
     print(train.shape)
     print(valid.shape)
-    train_datagen = DataGenerator(x=train['itemid'], y=train['Category'], batch_size=BATCH_SIZE)
-    valid_datagen = DataGenerator(x=valid['itemid'], y=valid['Category'], batch_size=BATCH_SIZE)
+    train_datagen = DataGenerator(
+        x=train_df['itemid'], y=train_df['Category'], batch_size=BATCH_SIZE)
+    valid_datagen = DataGenerator(
+        x=valid_df['itemid'], y=valid_df['Category'], batch_size=BATCH_SIZE)
 
     train_combined_model(train_datagen, valid_datagen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
