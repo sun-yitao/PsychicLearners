@@ -101,7 +101,7 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
                                        outputs=[final_output, text_output])
     return mul_inp_model
 
-def train(train_gen, valid_gen, class_weights=None):
+def train_model(train_gen, valid_gen, class_weights=None):
     image_model = keras.models.load_model(IMAGE_MODEL_PATH)
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove fully connected layers
@@ -192,5 +192,5 @@ if __name__ == '__main__':
     multi_inp_test = MultiInputDataGenerator(test, test_titles_seq, batch_size=64, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=False)
 
-    train(multi_inp_train, multi_inp_valid)
+    train_model(multi_inp_train, multi_inp_valid)
     
