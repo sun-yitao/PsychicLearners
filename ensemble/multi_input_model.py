@@ -45,7 +45,7 @@ class MultiInputDataGenerator(keras.utils.Sequence):
     """Takes in image generator and df, outputs image, title_seq, onehotencoded y
         image generator shuffle must be false"""
     def __init__(self, img_gen, titles_seq, batch_size=64, title_dim=16,
-                 n_classes=N_CLASSES, shuffle=True):
+                 n_classes=N_CLASSES, shuffle=True, has_y=True):
         'Initialization'
         self.img_gen = img_gen
         self.titles_seq = titles_seq
@@ -54,6 +54,7 @@ class MultiInputDataGenerator(keras.utils.Sequence):
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
+        self.has_y = has_y
 
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -63,13 +64,14 @@ class MultiInputDataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         batch_indexes = np.arange(index*self.batch_size, (index+1)*self.batch_size)
-        X_im = self.img_gen.__getitem__(index)
+        
         X_title_seq = self.titles_seq[batch_indexes]
-        #y = self.img_gen.__getitem__(index)[1]
-        print(X_im.shape)
-        print(X_title_seq.shape)
-        #print(y.shape)
-        return [X_im, X_title_seq], [y, y]
+        if self.has_y:
+            X_im, y = self.img_gen.__getitem__(index)
+            return [X_im, X_title_seq], [y, y]
+        else:
+            X_im = self.img_gen.__getitem__(index)
+            return [X_im, X_title_seq]
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -170,12 +172,12 @@ if __name__ == '__main__':
     img_valid_datagen = ImageDataGenerator(rescale=1/255)
     img_test_datagen = ImageDataGenerator(rescale=1/255)
     train = img_train_datagen.flow_from_dataframe(train_df, directory=TRAIN_IMAGE_DIR, x_col='image_filename', y_col='Category',
-                                                  target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode=None,
+                                                  target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode='categorical',
                                                   batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
 
     valid = img_valid_datagen.flow_from_dataframe(valid_df, directory=VALID_IMAGE_DIR, x_col='image_filename', y_col='Category',
-                                                    target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode=None,
-                                                    batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
+                                                  target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode='categorical',
+                                                  batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
     test = img_test_datagen.flow_from_dataframe(test_df, directory=TEST_IMAGE_DIR, x_col='image_filename', y_col=None,
                                                 target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode=None,
                                                 batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
@@ -196,7 +198,7 @@ if __name__ == '__main__':
     multi_inp_valid = MultiInputDataGenerator(valid, valid_titles_seq, batch_size=BATCH_SIZE, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=False)
     multi_inp_test = MultiInputDataGenerator(test, test_titles_seq, batch_size=BATCH_SIZE, title_dim=16,
-                                              n_classes=N_CLASSES, shuffle=False)
+                                              n_classes=N_CLASSES, shuffle=False, has_y=False)
 
     train_model(multi_inp_train, multi_inp_valid)
     
