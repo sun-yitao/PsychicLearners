@@ -99,7 +99,7 @@ def multi_input_model(vocab_size, k_reg=0):
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove pooling
-    flatten = layers.Flatten(image_model.layers[-3].output)
+    flatten = layers.Flatten(image_model.layers[-1].output)
     new_image_model = keras.models.Model(inputs=image_model.input, outputs=flatten)
     print(new_image_model.summary())
     # test with global max pooling as well
