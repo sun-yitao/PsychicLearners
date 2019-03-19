@@ -104,9 +104,9 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
 
 def train_model(train_gen, valid_gen, class_weights=None):
     image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-    image_model.layers.pop()  # remove fully connected layers
-    image_model.layers.pop()  # remove fully connected layers
-    image_model.layers.pop()  # remove pooling
+    image_model._layers.pop(0)  # remove fully connected layers
+    image_model._layers.pop(0)  # remove fully connected layers
+    image_model._layers.pop(0)  # remove pooling
     image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.output)
     print(image_model.summary())
     multi_inp_model = multi_input_model(image_model, vocab_size=vocab_size, k_reg=0)
