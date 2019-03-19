@@ -12,7 +12,7 @@ keras.backend.set_session(session)
 
 data_dir = Path.cwd().parent / 'data'
 labels = [str(x) for x in range(17,31)]
-ckpt_dir = data_dir / 'magpie' / 'checkpoints' / 'fashion' / 'v1'
+ckpt_dir = data_dir / 'magpie' / 'checkpoints' / 'fashion' / 'v2_cnn' #Change this
 os.makedirs(str(ckpt_dir), exist_ok=True)
 
 ckpt = keras.callbacks.ModelCheckpoint(os.path.join(ckpt_dir, 'model.{epoch:02d}-{val_categorical_accuracy:.2f}.h5'),
@@ -22,12 +22,11 @@ reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_categorical_accuracy'
                                               cooldown=0, min_lr=0)
 
 magpie = Magpie(word2vec_model=str(Path.cwd().parent/ 'title_classification' / 'word2vec.bin'),
-                scaler=str(ckpt_dir.parent / 'v1' / 'scaler.pkl'),
-                keras_model=str(ckpt_dir / 'model.29-0.59.h5'))
+                scaler=str(ckpt_dir.parent / 'v1' / 'scaler.pkl'))
 #magpie.fit_scaler(str(data_dir / 'magpie' / 'fashion' / 'train'))
 #magpie.save_scaler(str(ckpt_dir / 'scaler.pkl'), overwrite=True)
 magpie.batch_train(str(data_dir / 'magpie' / 'fashion' / 'train'), labels, 
-                   test_dir=str(data_dir / 'magpie' / 'fashion' / 'valid'), nn_model='cnn',                 
+                   test_dir=str(data_dir / 'magpie' / 'fashion' / 'valid'), nn_model='cnn',
                    batch_size=256, epochs=100, callbacks=[ckpt, reduce_lr], verbose=2)
 
 

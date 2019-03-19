@@ -1,18 +1,31 @@
 import os
 import csv
 import pandas as pd
+from ast import literal_eval
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_dir = os.path.join(psychic_learners_dir, 'data')
-big_category = 'fashion'
+big_category = 'mobile'
 train = pd.read_csv(os.path.join(data_dir, big_category + '_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_dir, big_category + '_valid_split.csv'))
+print(train['extractions'].head(5))
 #test = pd.read_csv(os.path.join(data_dir, big_category + '_test_split.csv'))
 train['formatted_category'] = train['Category'].map(lambda x: '__label__' + str(x))
 valid['formatted_category'] = valid['Category'].map(lambda x: '__label__' + str(x))
 
-new_train = train[['formatted_category', 'title']]
-new_valid = valid[['formatted_category', 'title']]
+train['extractions'] = train['extractions'].map(literal_eval)
+valid['extractions'] = valid['extractions'].map(literal_eval)
+train['extractions'] = train['extractions'].map(
+    lambda s: ' '.join(s) if s else pd.NaT)
+valid['extractions'] = valid['extractions'].map(
+    lambda s: ' '.join(s) if s else pd.NaT)
+#train['title'] = train['title'] + ' ' + train['extractions']
+#valid['title'] = valid['title'] + ' ' + valid['extractions']
+
+new_train = train[['formatted_category', 'extractions']]
+new_valid = valid[['formatted_category', 'extractions']]
+new_train = new_train.dropna()
+new_valid = new_valid.dropna()
 combined = new_train.append(new_valid)
 #new_train = train['translated_title']
 #new_valid = valid['translated_title']

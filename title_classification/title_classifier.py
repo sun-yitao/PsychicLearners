@@ -10,8 +10,12 @@ from sklearn import model_selection, preprocessing, linear_model, naive_bayes, m
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn import decomposition, ensemble
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score
+from mlens.ensemble import BlendEnsemble
 
 import keras
 from keras.preprocessing import text, sequence
@@ -29,10 +33,14 @@ RANDOM_STATE = 42
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True' #workaround for macOS mkl issue
 # load dataset
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
-train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
-valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))
-train_x, train_y = train['translated_title'], train['Category']
-valid_x, valid_y = valid['translated_title'], valid['Category']
+BIG_CATEGORY = 'fashion'
+prob_dir = os.path.join(data_directory, 'probabilities', BIG_CATEGORY)
+train = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_train_split.csv'))
+valid = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_valid_split.csv'))
+test = pd.read_csv(os.path.join(data_directory, f'{BIG_CATEGORY}_test_split.csv'))
+train_x, train_y = train['title'], train['Category']
+valid_x, valid_y = valid['title'], valid['Category']
+test_x = test['title']
 """
 samplers = [
     ['Random_Undersample', RandomUnderSampler(random_state=RANDOM_STATE)],
@@ -60,20 +68,20 @@ valid_y = encoder.fit_transform(valid_y)
 # create a count vectorizer object
 count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10, #Stop words may not be needed as they seem to be already removed
                              stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b')
-count_vect.fit(train['translated_title'])
+count_vect.fit(train['title'])
 
 # transform the training and validation data using count vectorizer object
 
 # word level tf-idf
 tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                             stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b')
-tfidf_vect.fit(train['translated_title'])
+                             stop_words='english',) #token_pattern=r'\b[^\d\W]{3,}\b')
+tfidf_vect.fit(train['title'])
 
 # ngram level tf-idf
 tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                                   stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b',
+                                   stop_words='english', #token_pattern=r'\b[^\d\W]{3,}\b',
                                    ngram_range=(1, 3))
-tfidf_vect_ngram.fit(train['translated_title'])
+tfidf_vect_ngram.fit(train['title'])
 
 """
 # load the pre-trained word-embedding vectors
@@ -85,7 +93,7 @@ for i, line in enumerate(open('crawl-300d-2M.vec')): #This for loop takes FOREVE
 
 # create a tokenizer
 token = text.Tokenizer()
-token.fit_on_texts(train['translated_title'])
+token.fit_on_texts(train['title'])
 word_index = token.word_index
 
 # convert text to sequence of tokens and pad them to ensure equal length vectors
@@ -101,8 +109,8 @@ for word, i in word_index.items():
     if embedding_vector is not None:
         embedding_matrix[i] = embedding_vector"""
 
-#train['char_count'] = train['translated_title'].apply(len)
-#train['word_count'] = train['translated_title'].apply(lambda x: len(x.split()))
+#train['char_count'] = train['title'].apply(len)
+#train['word_count'] = train['title'].apply(lambda x: len(x.split()))
 #train['word_density'] = train['char_count'] / (train['word_count']+1)
 """
 pos_family = {
@@ -126,11 +134,11 @@ def check_pos_tag(x, flag):
         pass
     return cnt
 
-train['noun_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'noun'))
-train['verb_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'verb'))
-train['adj_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'adj'))
-train['adv_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'adv'))
-train['pron_count'] = train['translated_title'].apply(lambda x: check_pos_tag(x, 'pron'))
+train['noun_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'noun'))
+train['verb_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'verb'))
+train['adj_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'adj'))
+train['adv_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'adv'))
+train['pron_count'] = train['title'].apply(lambda x: check_pos_tag(x, 'pron'))
 
 # train a LDA Model
 lda_model = decomposition.LatentDirichletAllocation(
@@ -147,7 +155,8 @@ for i, topic_dist in enumerate(topic_word):
         topic_dist)][:-(n_top_words+1):-1]
     topic_summaries.append(' '.join(topic_words)) """
 
-def train_model(classifier, feature_vector_train, label, feature_vector_valid, is_neural_net=False):
+def train_model(classifier, feature_vector_train, label, feature_vector_valid, 
+                is_neural_net=False, extract_probs=False, feature_vector_test=None, model_name='sklearn'):
     # fit the training dataset on the classifier
     if isinstance(classifier, xgboost.XGBClassifier):
         feature_vector_train = feature_vector_train.to_csc()
@@ -157,11 +166,18 @@ def train_model(classifier, feature_vector_train, label, feature_vector_valid, i
     predictions = classifier.predict(feature_vector_train)
     print('Train Acc: {}'.format(metrics.accuracy_score(predictions, label)))
     predictions = classifier.predict(feature_vector_valid)
+    if extract_probs:
+        val_preds = classifier.predict_proba(feature_vector_valid)
+        test_preds = classifier.predict_proba(feature_vector_test)
+        print(val_preds.shape)
+        print(test_preds.shape)
+        np.save(os.path.join(prob_dir, model_name, 'valid.npy'), val_preds)
+        np.save(os.path.join(prob_dir, model_name, 'test.npy'), test_preds)
     if is_neural_net:
         predictions = predictions.argmax(axis=-1)
     return metrics.accuracy_score(predictions, valid_y)
 
-"""
+
 # Naive Bayes on Count Vectors
 accuracy = train_model(make_pipeline(count_vect, naive_bayes.MultinomialNB()),
                        train_x, train_y, valid_x)
@@ -196,11 +212,41 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram,
                                      linear_model.LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
                                                                      tol=1e-4, C=1.e4 / 533292)),
                        train_x, train_y, valid_x)
-print("LR, N-Gram Vectors: ", accuracy)"""
+print("LR, N-Gram Vectors: ", accuracy)
+seed = 2017
+np.random.seed(seed)
+"""
+params = {
+    'max_depth': [9, 11, 13],
+    #'learning_rate': [0.05, 0.1, 0.2],
+    #'n_estimators': range(50, 200, 50),
+    #'gamma': [i/10.0 for i in range(0, 5)],
+    #'subsample': [i/10.0 for i in range(6, 10)],
+    #'colsample_bytree': [i/10.0 for i in range(6, 10)],
+    #'reg_alpha': [0, 0.001, 0.005, 0.01, 0.05]
+}
+ensemble = BlendEnsemble(scorer=accuracy_score, random_state=seed, verbose=2)
+ensemble.add([
+    RandomForestClassifier(n_estimators=100, max_depth=58*10, min_samples_leaf=10),  
+    #svm.LinearSVC(dual=False, tol=.01),
+    LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial', tol=1e-4, C=1.e4 / 533292),
+    naive_bayes.MultinomialNB(),
+    xgboost.XGBClassifier(max_depth=11, learning_rate=0.1, scale_pos_weight=1,
+                          n_estimators=100, silent=True,
+                          objective="binary:logistic", booster='gbtree',
+                          n_jobs=6, nthread=None, gamma=0, min_child_weight=2,
+                          max_delta_step=0, subsample=1, colsample_bytree=1, colsample_bylevel=1,
+                          reg_alpha=0, reg_lambda=1),
+], proba=True)
 
-accuracy = train_model(make_pipeline(tfidf_vect_ngram, svm.LinearSVC(dual=False, tol=.01)), 
-                        train_x, train_y, valid_x)
-print("SVM, N-Gram Vectors: ", accuracy)
+# Attach the final meta estimator
+ensemble.add_meta(LogisticRegression(solver='sag', n_jobs=6, multi_class='multinomial',
+                                     tol=1e-4, C=1.e4 / 533292))
+
+
+accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=ensemble),
+                                     train_x, train_y, valid_x), param_grid=params, scoring='accuracy', n_jobs=-1)
+print("Ensemble: ", accuracy)"""
 """
 # RF on Count Vectors
 
@@ -212,6 +258,7 @@ print("RF, Count Vectors: ", accuracy)
 accuracy = train_model(make_pipeline(tfidf_vect, ensemble.RandomForestClassifier(n_estimators=50, max_depth=58*10, min_samples_leaf=10)),
                        train_x, train_y, valid_x)
 print("RF, WordLevel TF-IDF: ", accuracy)"""
+"""
 params = {
     'max_depth': [9, 11, 13],
     #'learning_rate': [0.05, 0.1, 0.2],
@@ -243,7 +290,7 @@ accuracy = train_model(make_pipeline(tfidf_vect_ngram, GridSearchCV(estimator=xg
                                                                     param_grid=params, scoring='accuracy', n_jobs=-1)),
                                                                     train_x, train_y, valid_x)
 print("Xgb, N-Gram Vectors: ", accuracy)
-
+"""
 """
 def create_model_architecture(input_size):
     # create input layer

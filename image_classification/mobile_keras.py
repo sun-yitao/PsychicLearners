@@ -7,7 +7,7 @@ from keras.layers import Dense, Input
 from random_eraser import get_random_eraser
 #from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from effnet import Effnet
-from keras.applications.xception import Xception
+from se_resnext import SEResNextImageNet
 from keras_preprocessing.image import ImageDataGenerator
 from keras import backend as K
 from keras.utils import multi_gpu_model
@@ -21,10 +21,10 @@ CHECKPOINT_PATH = os.path.join(psychic_learners_dir, 'data', 'keras_checkpoints'
 EPOCHS = 200  # only for calculation of decay
 IMAGE_SIZE = (240, 240)  # height, width
 N_CLASSES = 27
-MODEL_NAME = 'effnet'
+MODEL_NAME = 'seresnext50'
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
-BATCH_SIZE =256
+BATCH_SIZE =64
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -51,18 +51,20 @@ if __name__ == '__main__':
                                               color_mode='rgb', batch_size=BATCH_SIZE, interpolation='bicubic')
     class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
     # model
-    """input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
-    base_model = Xception(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-                          include_top=False,
-                          weights='imagenet',
-                          input_tensor=input_tensor,
-                          pooling='avg',
-                          classes=N_CLASSES)
+    input_tensor = keras.layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
+    base_model = SEResNextImageNet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
+                                   depth=[3, 4, 6, 3],
+                                   cardinality=32,
+                                   width=4,
+                                   weight_decay=5e-4,
+                                   include_top=False,
+                                   weights=None,
+                                   input_tensor=input_tensor,
+                                   pooling='avg',
+                                   classes=N_CLASSES)
     x = base_model.output
     predictions = Dense(N_CLASSES, activation='softmax')(x)
-    model = keras.models.Model(inputs=base_model.input, outputs=predictions)"""
-    model = Effnet(input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3), nb_classes=N_CLASSES, 
-                   include_top=True, weights=None)
+    model = keras.models.Model(inputs=base_model.input, outputs=predictions)
     decay = LR_BASE/(EPOCHS * LR_DECAY_FACTOR)
     sgd = keras.optimizers.SGD(lr=LR_BASE, decay=decay, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
