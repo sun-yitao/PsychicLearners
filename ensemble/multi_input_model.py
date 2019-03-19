@@ -106,7 +106,10 @@ def multi_input_model(vocab_size, k_reg=0):
     image_model.layers.pop()  # remove pooling
     flatten = layers.Flatten()(image_model.layers[-3].output)
     new_image_model = keras.models.Model(inputs=image_model.input, outputs=flatten)
-    print(new_image_model.summary())
+    print(new_image_model.summary)
+    for layer in new_image_model.layers[int(len(new_image_model.layers) * 2/3):]:
+        layer.trainable = False
+
     # test with global max pooling as well
     concat = keras.layers.concatenate([text_out, new_image_model.output])
     final_output = layers.Dense(N_CLASSES, activation='softmax',
@@ -118,7 +121,7 @@ def multi_input_model(vocab_size, k_reg=0):
 def train_model(train_gen, valid_gen, class_weights=None):
     multi_inp_model = multi_input_model(vocab_size=vocab_size, k_reg=0)
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-    multi_inp_model.compile(optimizer=sgd, loss='categorical_crossentropy',
+    multi_inp_model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'],
                             loss_weights=[1., 0.2])
     # callbacks
     checkpoint_path = os.path.join(CHECKPOINT_PATH, '{}_checkpoints'.format(MODEL_NAME))
