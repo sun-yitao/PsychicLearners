@@ -107,7 +107,7 @@ def train_model(train_gen, valid_gen, class_weights=None):
     image_model._layers.pop(0)  # remove fully connected layers
     image_model._layers.pop(0)  # remove fully connected layers
     image_model._layers.pop(0)  # remove pooling
-    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.output)
+    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-3].output)
     print(image_model.summary())
     multi_inp_model = multi_input_model(image_model, vocab_size=vocab_size, k_reg=0)
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
