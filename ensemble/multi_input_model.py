@@ -103,8 +103,7 @@ def multi_input_model(vocab_size, k_reg=0):
     new_image_model = keras.models.Model(inputs=image_model.input, outputs=flatten)
     print(new_image_model.summary())
     # test with global max pooling as well
-    img_flatten = layers.Flatten(new_image_model.output)
-    concat = keras.layers.concatenate([text_out, img_flatten])
+    concat = keras.layers.concatenate([text_out, new_image_model.output])
     final_output = layers.Dense(N_CLASSES, activation='softmax',
                                 name='final_output', kernel_regularizer=k_regularizer)(concat)
     mul_inp_model = keras.models.Model(inputs=[new_image_model.input, text_input],
