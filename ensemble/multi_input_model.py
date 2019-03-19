@@ -112,7 +112,6 @@ def multi_input_model(vocab_size, k_reg=0):
     return mul_inp_model
 
 def train_model(train_gen, valid_gen, class_weights=None):
-    i
     multi_inp_model = multi_input_model(vocab_size=vocab_size, k_reg=0)
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     multi_inp_model.compile(optimizer=sgd, loss='categorical_crossentropy',
