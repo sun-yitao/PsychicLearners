@@ -87,7 +87,7 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
     text_input = layers.Input(shape=(16,), name='text_input')
     embedding = layers.Embedding(input_dim=vocab_size,
                                  output_dim=128,
-                                 input_length=vocab_size)(text_input)
+                                 input_length=16)(text_input)
     x = keras.layers.Flatten()(embedding)
     x = layers.Dense(128, activation=None, kernel_initializer='he_uniform',
                      kernel_regularizer=k_regularizer)(x)
