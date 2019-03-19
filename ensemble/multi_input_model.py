@@ -66,6 +66,7 @@ class MultiInputDataGenerator(keras.utils.Sequence):
         X_im = self.img_gen.__getitem__(index)[0]
         X_title_seq = self.titles_seq[batch_indexes]
         y = self.img_gen.__getitem__(index)[1]
+        print(X_im.shape)
         return [X_im, X_title_seq], [y, y]
 
     def on_epoch_end(self):
