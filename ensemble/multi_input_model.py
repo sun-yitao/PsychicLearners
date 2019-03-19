@@ -81,7 +81,7 @@ def get_image_name(filepath):
         image_name += '.jpg'
     return image_name
 
-def multi_input_model(image_model, vocab_size, k_reg=0):
+def multi_input_model(vocab_size, k_reg=0):
     filter_sizes = (3, 8)
     k_regularizer = keras.regularizers.l2(k_reg)
     text_input = layers.Input(shape=(16,), name='text_input')
@@ -94,22 +94,26 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
     text_out = layers.PReLU()(x)
     text_output = layers.Dense(N_CLASSES, activation='softmax', name='text_output', kernel_regularizer=k_regularizer)(text_out)
     
-    img_flatten = layers.Flatten(image_model.output)  # test with global max pooling as well
+    #img_input = layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
+    image_model = keras.models.load_model(IMAGE_MODEL_PATH)
+    image_model.layers.pop()  # remove fully connected layers
+    image_model.layers.pop()  # remove fully connected layers
+    image_model.layers.pop()  # remove pooling
+    flatten = layers.Flatten(image_model.layers[-3].output)
+    new_image_model = keras.models.Model(inputs=image_model.input, outputs=flatten)
+    print(new_image_model.summary())
+    # test with global max pooling as well
+    img_flatten = layers.Flatten(new_image_model.output)
     concat = keras.layers.concatenate([text_out, img_flatten])
     final_output = layers.Dense(N_CLASSES, activation='softmax',
                                 name='final_output', kernel_regularizer=k_regularizer)(concat)
-    mul_inp_model = keras.models.Model(inputs=[image_model.input, text_input],
+    mul_inp_model = keras.models.Model(inputs=[new_image_model.input, text_input],
                                        outputs=[final_output, text_output])
     return mul_inp_model
 
 def train_model(train_gen, valid_gen, class_weights=None):
-    image_model = keras.models.load_model(IMAGE_MODEL_PATH)
-    image_model._layers.pop(0)  # remove fully connected layers
-    image_model._layers.pop(0)  # remove fully connected layers
-    image_model._layers.pop(0)  # remove pooling
-    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-3].output)
-    print(image_model.summary())
-    multi_inp_model = multi_input_model(image_model, vocab_size=vocab_size, k_reg=0)
+    i
+    multi_inp_model = multi_input_model(vocab_size=vocab_size, k_reg=0)
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     multi_inp_model.compile(optimizer=sgd, loss='categorical_crossentropy',
                             loss_weights=[1., 0.2])
