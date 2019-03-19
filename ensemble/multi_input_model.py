@@ -107,8 +107,8 @@ def train_model(train_gen, valid_gen, class_weights=None):
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove pooling
-    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
-
+    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers.output)
+    print(image_model.summary())
     multi_inp_model = multi_input_model(image_model, vocab_size=vocab_size, k_reg=0)
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     multi_inp_model.compile(optimizer=sgd, loss='categorical_crossentropy',
