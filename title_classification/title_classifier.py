@@ -66,20 +66,20 @@ train_y = encoder.fit_transform(train_y)
 valid_y = encoder.fit_transform(valid_y)
 
 # create a count vectorizer object
-count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10, #Stop words may not be needed as they seem to be already removed
-                             stop_words='english', token_pattern=r'\b[^\d\W]{3,}\b')
+count_vect = CountVectorizer(analyzer='word', strip_accents='unicode',#Stop words may not be needed as they seem to be already removed
+                             stop_words=None, )  # \b[^\d\W]{3,}\b
 count_vect.fit(train['title'])
 
 # transform the training and validation data using count vectorizer object
 
 # word level tf-idf
-tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                             stop_words='english',) #token_pattern=r'\b[^\d\W]{3,}\b')
+tfidf_vect = TfidfVectorizer(analyzer='word', strip_accents='unicode',
+                             stop_words=None,) #token_pattern=r'\b[^\d\W]{3,}\b')
 tfidf_vect.fit(train['title'])
 
 # ngram level tf-idf
-tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode', max_df=0.5, min_df=10,
-                                   stop_words='english', #token_pattern=r'\b[^\d\W]{3,}\b',
+tfidf_vect_ngram = TfidfVectorizer(analyzer='word', strip_accents='unicode',
+                                   stop_words=None, #token_pattern=r'\b[^\d\W]{3,}\b',
                                    ngram_range=(1, 3))
 tfidf_vect_ngram.fit(train['title'])
 
