@@ -94,7 +94,8 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
     text_out = layers.PReLU()(x)
     text_output = layers.Dense(N_CLASSES, activation='softmax', name='text_output', kernel_regularizer=k_regularizer)(text_out)
     
-    concat = keras.layers.concatenate([text_out, image_model.output])
+    img_flatten = layers.Flatten(image_model.output)  # test with global max pooling as well
+    concat = keras.layers.concatenate([text_out, img_flatten])
     final_output = layers.Dense(N_CLASSES, activation='softmax',
                                 name='final_output', kernel_regularizer=k_regularizer)(concat)
     mul_inp_model = keras.models.Model(inputs=[image_model.input, text_input],
