@@ -67,6 +67,8 @@ class MultiInputDataGenerator(keras.utils.Sequence):
         X_title_seq = self.titles_seq[batch_indexes]
         y = self.img_gen.__getitem__(index)[1]
         print(X_im.shape)
+        print(X_title_seq.shape)
+        print(y.shape)
         return [X_im, X_title_seq], [y, y]
 
     def on_epoch_end(self):
@@ -189,11 +191,11 @@ if __name__ == '__main__':
     test_titles_seq = pad_sequences(test_titles_seq, padding='post', maxlen=16)
     vocab_size = len(tokenizer.word_index) + 1
 
-    multi_inp_train = MultiInputDataGenerator(train, train_titles_seq, batch_size=64, title_dim=16,
+    multi_inp_train = MultiInputDataGenerator(train, train_titles_seq, batch_size=BATCH_SIZE, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=True)
-    multi_inp_valid = MultiInputDataGenerator(valid, valid_titles_seq, batch_size=64, title_dim=16,
+    multi_inp_valid = MultiInputDataGenerator(valid, valid_titles_seq, batch_size=BATCH_SIZE, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=False)
-    multi_inp_test = MultiInputDataGenerator(test, test_titles_seq, batch_size=64, title_dim=16,
+    multi_inp_test = MultiInputDataGenerator(test, test_titles_seq, batch_size=BATCH_SIZE, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=False)
 
     train_model(multi_inp_train, multi_inp_valid)
