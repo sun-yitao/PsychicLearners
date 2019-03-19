@@ -93,14 +93,14 @@ def multi_input_model(vocab_size, k_reg=0):
     embedding = layers.Embedding(input_dim=vocab_size,
                                  output_dim=128,
                                  input_length=16)(text_input)
-    x = keras.layers.Flatten()(embedding)
+    #x = keras.layers.Flatten()(embedding)
     conv_blocks = []
     for sz in filter_sizes:
         conv = layers.Convolution1D(filters=64,
                                     kernel_size=sz,
                                     padding="valid",
                                     activation="relu",
-                                    strides=1)(x)
+                                    strides=1)(embedding)
         conv = layers.MaxPooling1D(pool_size=2)(conv)
         conv = layers.Flatten()(conv)
         conv_blocks.append(conv)
