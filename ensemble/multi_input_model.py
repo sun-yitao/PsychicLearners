@@ -101,7 +101,7 @@ def multi_input_model(image_model, vocab_size, k_reg=0):
                                        outputs=[final_output, text_output])
     return mul_inp_model
 
-def train(train_gen, valid_gen, class_weights):
+def train(train_gen, valid_gen, class_weights=None):
     image_model = keras.models.load_model(IMAGE_MODEL_PATH)
     image_model.layers.pop()  # remove fully connected layers
     image_model.layers.pop()  # remove fully connected layers
@@ -176,10 +176,10 @@ if __name__ == '__main__':
     #class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.labels)
 
     tokenizer = Tokenizer()
-    tokenizer.fit_on_texts(train_df['titles'].values)
-    train_titles_seq = tokenizer.texts_to_sequences(train_df['titles'].values)
-    valid_titles_seq = tokenizer.texts_to_sequences(valid_df['titles'].values)
-    test_titles_seq = tokenizer.texts_to_sequences(test_df['titles'].values)
+    tokenizer.fit_on_texts(train_df['title'].values)
+    train_titles_seq = tokenizer.texts_to_sequences(train_df['title'].values)
+    valid_titles_seq = tokenizer.texts_to_sequences(valid_df['title'].values)
+    test_titles_seq = tokenizer.texts_to_sequences(test_df['title'].values)
     train_titles_seq = pad_sequences(train_titles_seq, padding='post', maxlen=16)
     valid_titles_seq = pad_sequences(valid_titles_seq, padding='post', maxlen=16)
     test_titles_seq = pad_sequences(test_titles_seq, padding='post', maxlen=16)
@@ -192,5 +192,5 @@ if __name__ == '__main__':
     multi_inp_test = MultiInputDataGenerator(test, test_titles_seq, batch_size=64, title_dim=16,
                                               n_classes=N_CLASSES, shuffle=False)
 
-    train(multi_inp_train, multi_inp_valid, class_weights=class_weights)
+    train(multi_inp_train, multi_inp_valid)
     
