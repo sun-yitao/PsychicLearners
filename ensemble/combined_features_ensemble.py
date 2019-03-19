@@ -26,7 +26,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' /
                        'keras_checkpoints' / BIG_CATEGORY / 'converted_model.h5')
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
@@ -109,8 +109,7 @@ def get_features(csv, subset):
     image_model = keras.models.load_model(IMAGE_MODEL_PATH)
     image_model.layers.pop()
     image_model.layers.pop()
-    image_model = keras.models.Model(
-        inputs=image_model.input, outputs=image_model.layers[-1].output)
+    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
     print(image_model.summary())
     """Extracts and saves text and image features"""
     df = pd.read_csv(csv)

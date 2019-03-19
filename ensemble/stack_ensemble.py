@@ -243,17 +243,17 @@ def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kag
 
 if __name__ == '__main__':
     COMBINED_MODEL_NAME = '10+ind_rnn+multi_head'
-    """
+    
     train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
-          model_name=COMBINED_MODEL_NAME)"""
+          model_name=COMBINED_MODEL_NAME)
 
     #predict_all()
     #print(evaluate_total_accuracy(0.79651, 0.67459, 0.8366, 0)) #5+wordrnn+rcnn
     #print(evaluate_total_accuracy(0.79860, 0.67886, 0.84633, 0.76840))  # 7+bert
     #print(evaluate_total_accuracy(0.79742, 0.67977, 0.84633, 0))  # 8+atten_bilstm
     #print(evaluate_total_accuracy(0.79798, 0.67977, 0.84633, 0))  # 8+adv
-    print(evaluate_total_accuracy(0.79881, 0.68068, 0.84658, 0.76753))  # 8+adv+attn_blstm softmax, normalize
+    #print(evaluate_total_accuracy(0.79881, 0.68068, 0.84658, 0.76753))  # 8+adv+attn_blstm softmax, normalize
     #print(evaluate_total_accuracy(0.79763, 0, 0, 0))  # 10+multi_head
 
 
