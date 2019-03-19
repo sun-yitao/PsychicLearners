@@ -63,9 +63,8 @@ class MultiInputDataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # Generate indexes of the batch
         batch_indexes = np.arange(index*self.batch_size, (index+1)*self.batch_size)
-        X_im = self.img_gen.__getitem__(index)[0]
+        X_im, y = self.img_gen.__getitem__(index)
         X_title_seq = self.titles_seq[batch_indexes]
-        y = self.img_gen.__getitem__(index)[1]
         print(X_im.shape)
         print(X_title_seq.shape)
         print(y.shape)
