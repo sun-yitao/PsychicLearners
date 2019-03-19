@@ -173,7 +173,7 @@ if __name__ == '__main__':
     test = img_test_datagen.flow_from_dataframe(test_df, directory=TEST_IMAGE_DIR, x_col='image_filename', y_col=None,
                                                 target_size=IMAGE_SIZE, color_mode='rgb', classes=None, class_mode=None,
                                                 batch_size=BATCH_SIZE, shuffle=False, seed=101, interpolation='bicubic')
-    class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.classes)
+    class_weights = compute_class_weight('balanced', np.arange(0, N_CLASSES), train.labels)
 
     tokenizer = Tokenizer()
     tokenizer.fit_on_texts(train_df['titles'].values)
