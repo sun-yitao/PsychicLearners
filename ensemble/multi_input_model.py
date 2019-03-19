@@ -94,9 +94,17 @@ def multi_input_model(vocab_size, k_reg=0):
                                  output_dim=128,
                                  input_length=16)(text_input)
     x = keras.layers.Flatten()(embedding)
-    x = layers.Dense(128, activation=None, kernel_initializer='he_uniform',
-                     kernel_regularizer=k_regularizer)(x)
-    text_out = layers.PReLU()(x)
+    conv_blocks = []
+    for sz in filter_sizes:
+        conv = layers.Convolution1D(filters=64,
+                                    kernel_size=sz,
+                                    padding="valid",
+                                    activation="relu",
+                                    strides=1)(x)
+        conv = layers.MaxPooling1D(pool_size=2)(conv)
+        conv = layers.Flatten()(conv)
+        conv_blocks.append(conv)
+    text_out = layers.Concatenate()(conv_blocks) if len(conv_blocks) > 1 else conv_blocks[0]
     text_output = layers.Dense(N_CLASSES, activation='softmax', name='text_output', kernel_regularizer=k_regularizer)(text_out)
     
     #img_input = layers.Input(shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
@@ -112,8 +120,11 @@ def multi_input_model(vocab_size, k_reg=0):
 
     # test with global max pooling as well
     concat = keras.layers.concatenate([text_out, new_image_model.output])
+    x = layers.Dropout(0.2)(concat)
+    x = layers.Dense(128, activation=None, kernel_initializer='he_uniform',
+                     kernel_regularizer=k_regularizer)(x)
     final_output = layers.Dense(N_CLASSES, activation='softmax',
-                                name='final_output', kernel_regularizer=k_regularizer)(concat)
+                                name='final_output', kernel_regularizer=k_regularizer)(x)
     mul_inp_model = keras.models.Model(inputs=[new_image_model.input, text_input],
                                        outputs=[final_output, text_output])
     return mul_inp_model
