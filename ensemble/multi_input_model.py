@@ -160,6 +160,9 @@ if __name__ == '__main__':
     valid_df['image_filename'] = valid_df['image_path'].map(get_image_name)
     valid_df['image_filename'] = valid_df.apply(lambda df: os.path.join(str(df['Category']), df['image_filename']), axis=1)
     test_df['image_filename'] = test_df['image_path'].map(get_image_name)
+    train_df['Category'] = train_df['Category'].apply(str)
+    valid_df['Category'] = valid_df['Category'].apply(str)
+    test_df['Category'] = test_df['Category'].apply(str)
 
     img_train_datagen = ImageDataGenerator(rotation_range=0, width_shift_range=0.1,
                                        height_shift_range=0.1, brightness_range=(0.9, 1.1),
