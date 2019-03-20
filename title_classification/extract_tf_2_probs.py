@@ -17,7 +17,7 @@ BIG_CATEGORY = 'mobile'
 ROOT_PROBA_FOLDER = psychic_learners_dir / 'data' / 'probabilities'
 MODEL_NAME = 'multi_head'
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / MODEL_NAME / '0.7946982691408078.ckpt-289')
+                      BIG_CATEGORY / MODEL_NAME / '0.796101668485888.ckpt-290')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' /
                 f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' /
