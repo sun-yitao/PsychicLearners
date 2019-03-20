@@ -2,6 +2,7 @@ import os
 from multiprocessing import cpu_count
 from pathlib import Path
 import pickle
+import re
 
 from PIL import Image
 import pandas as pd
@@ -11,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from scipy.special import softmax
 from sklearn import metrics
 from sklearn.externals import joblib
+from nltk import word_tokenize
 
 import keras
 from keras import layers
@@ -30,7 +32,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'beauty'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
@@ -230,11 +232,11 @@ def batch_iter(inputs, batch_size):
         end_index = min((batch_num + 1) * batch_size, len(inputs))
         yield inputs[start_index:end_index]
 
-WORD_MAX_LEN = 16
+WORD_MAX_LEN = 15
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
-                      BIG_CATEGORY / 'word_cnn' / '0.7805109797045588.ckpt-382000')
+                      BIG_CATEGORY / 'word_cnn' / '0.8223667828685259.ckpt-686000')
 
-def extract_text_features(titles):
+def extract_text_features(titles, subset):
     """titles: array of titles"""
     test_x = build_word_dataset(titles, word_dict, WORD_MAX_LEN)
     graph = tf.Graph()
@@ -260,6 +262,8 @@ def extract_text_features(titles):
                 for text_feature in text_features:
                     all_text_features.append(text_feature)
     all_text_features = np.array(all_text_features)
+    os.makedirs(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn'), exist_ok=True)
+    np.save(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / f'{subset}.npy'), all_text_features)
     return all_text_features
 
 
@@ -294,10 +298,12 @@ def train_catboost(model_name, extract_probs=False, save_model=False):
 
 
 def train_xgb(model_name, extract_probs=False, save_model=False):
-    train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
+    train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     valid_df = pd.read_csv(VALID_CSV)
     train_y = valid_df['Category'].values
-    
+    train_text_features = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / 'valid.npy'))
+    train_text_features = minmax_scale(train_text_features)
+    train_x = np.concatenate([train_probs, train_text_features], axis=1)
     X_train, X_valid, y_train, y_valid = train_test_split(train_x, train_y,
                                                           stratify=train_y,
                                                           test_size=0.25, random_state=42)
@@ -306,9 +312,9 @@ def train_xgb(model_name, extract_probs=False, save_model=False):
     #y_valid = encoder.fit_transform(y_valid.reshape(-1, 1))
 
     classifier = xgboost.XGBClassifier(
-        max_depth=4, learning_rate=0.1, n_estimators=100, silent=True,
+        max_depth=5, learning_rate=0.1, n_estimators=100, silent=True,
         objective='binary:logistic', booster='gbtree', n_jobs=6, nthread=None,
-        gamma=0, min_child_weight=4, max_delta_step=0, subsample=0.7, colsample_bytree=0.8,
+        gamma=0, min_child_weight=5, max_delta_step=0, subsample=0.7, colsample_bytree=0.8,
         colsample_bylevel=1, reg_alpha=0.005, reg_lambda=1, scale_pos_weight=1,
         base_score=0.5, random_state=0, seed=None, missing=None)
     classifier.fit(X_train, y_train)
@@ -424,15 +430,16 @@ def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kag
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = 'all_13'
+    COMBINED_MODEL_NAME = 'all_13_word_features'
     """
     train(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
           model_name=COMBINED_MODEL_NAME)"""
-
+    #extract_text_features(pd.read_csv(VALID_CSV)['title'].values, subset='valid')
+    #extract_text_features(pd.read_csv(TEST_CSV)['title'].values, subset='test')
     #predict_all()
-    #train_xgb(COMBINED_MODEL_NAME, save_model=True)
-    train_catboost(COMBINED_MODEL_NAME, save_model=False)
+    train_xgb(COMBINED_MODEL_NAME, save_model=False)
+    #train_catboost(COMBINED_MODEL_NAME, save_model=False)
     #print(evaluate_total_accuracy(0.79651, 0.67459, 0.8366, 0)) #5+wordrnn+rcnn
     #print(evaluate_total_accuracy(0.79860, 0.67886, 0.84633, 0.76840))  # 7+bert
     #print(evaluate_total_accuracy(0.79742, 0.67977, 0.84633, 0))  # 8+atten_bilstm
