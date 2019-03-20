@@ -26,7 +26,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 IMAGE_MODEL_PATH = str(psychic_learners_dir / 'data' /
                        'keras_checkpoints' / BIG_CATEGORY / 'converted_model.h5')
 TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
@@ -109,8 +109,7 @@ def get_features(csv, subset):
     image_model = keras.models.load_model(IMAGE_MODEL_PATH)
     image_model.layers.pop()
     image_model.layers.pop()
-    image_model = keras.models.Model(
-        inputs=image_model.input, outputs=image_model.layers[-1].output)
+    image_model = keras.models.Model(inputs=image_model.input, outputs=image_model.layers[-1].output)
     print(image_model.summary())
     """Extracts and saves text and image features"""
     df = pd.read_csv(csv)
@@ -221,7 +220,7 @@ def combined_features_model(dense1=1024, dense2=None, dropout=0.25, k_reg=0.0001
 def train_combined_model(train_gen, val_gen, lr_base=0.01, epochs=50, lr_decay_factor=1,
                          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'image_and_text'),
                          model_name='1'):
-    combined_model = combined_features_model(dense1=128, dense2=128, dropout=0.5, k_reg=0.0001)
+    combined_model = combined_features_model(dense1=256, dense2=None, dropout=0.5, k_reg=0.00001)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
