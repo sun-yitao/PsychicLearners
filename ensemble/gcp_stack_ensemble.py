@@ -371,8 +371,8 @@ def change_wrong_category():
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
-    train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
-    train_probs = np.concatenate([train_probs, train_elmo], axis=1)
+    #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
+    #train_probs = np.concatenate([train_probs, train_elmo], axis=1)
     valid_df = pd.read_csv(VALID_CSV)
     train_y = valid_df['Category'].values
     encoder = LabelEncoder()
