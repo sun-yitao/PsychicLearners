@@ -58,16 +58,14 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_200',
-    #'KNN_itemid',
+    #'KNN_itemid_400',  # fashion
+    'KNN_itemid', # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     #'blend_ensemble',
-    #'knn20_tfidf', 
-    #'knn40_tfidf',
-    #'rf_itemid',
-    #'xgb',
-    #'xgb_tfidf',
+    'knn40_tfidf',
+    'rf_itemid',
+    
 ]
 unwanted_models = [
     'log_reg',
@@ -79,7 +77,9 @@ unwanted_models = [
     'meta',
     'knn5',
     'knn10',
-    'knn20_tfidf'
+    'knn20_tfidf',
+    'xgb',
+    'xgb_tfidf',
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -652,6 +652,8 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3787% BEST aka 17_with_itemid
 17_with_itemid + knn20_tfidf = 82.3369
 17_with_itemid + knn40_tfidf = 82.3892
+17_with_itemid + knn40_tfidf + rf_itemid = 82.5497
+
 
 
 ### fashion

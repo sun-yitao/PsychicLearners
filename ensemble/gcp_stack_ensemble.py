@@ -16,7 +16,7 @@ from sklearn import metrics
 from sklearn.externals import joblib
 from nltk import word_tokenize
 from tqdm import tqdm
-from bayes_opt import BayesianOptimization
+from skopt import BayesSearchCV
 
 import xgboost
 #from catboost import CatBoostClassifier, Pool
@@ -26,7 +26,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -50,16 +50,14 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_400',
-    'KNN_itemid',
+    'KNN_itemid_200',   #fashion
+    'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     #'blend_ensemble',
-    #'knn20_tfidf',
     'knn40_tfidf',
     'rf_itemid',
-    'xgb',
-    #'xgb_tfidf',
+    
 ]
 unwanted_models = [
     'log_reg',
@@ -71,7 +69,9 @@ unwanted_models = [
     'meta',
     'knn5',
     'knn10',
-    'knn20_tfidf'
+    'knn20_tfidf',
+    'xgb',
+    'xgb_tfidf',
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -435,18 +435,7 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'test.npy'), test_preds)
 
 
-def xgb_evaluate(max_depth, gamma, colsample_bytree):
-    params = {'eval_metric': 'rmse',
-              'max_depth': int(max_depth),
-              'subsample': 0.8,
-              'eta': 0.1,
-              'gamma': gamma,
-              'colsample_bytree': colsample_bytree}
-    # Used around 1000 boosting rounds in the full model
-    cv_result = xgb.cv(params, dtrain, num_boost_round=100, nfold=3)
 
-    # Bayesian optimization only knows how to maximize, not minimize, so return the negative RMSE
-    return -1.0 * cv_result['test-rmse-mean'].iloc[-1]
 
 def meta_meta_learner():
     meta_xgb_val_prob = np.load(os.path.join(ROOT_PROBA_FOLDER, model_name, 'valid.npy'))
