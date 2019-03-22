@@ -26,7 +26,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
+BIG_CATEGORY = 'beauty'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -50,12 +50,12 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_100',   #fashion
-    #'KNN_itemid',       #non-fashion
+    #'KNN_itemid_100',   #fashion
+    'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    #'rf_itemid',  #non-fashion
+    'rf_itemid',  #non-fashion
     
 ]
 unwanted_models = [
@@ -434,6 +434,8 @@ def status_print(optim_result):
     all_models.to_csv(clf_name+"_cv_results.csv")
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
+    if stratified and save_model:
+        raise Exception('Stratified and save model on')
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
     #train_probs = np.concatenate([train_probs, train_elmo], axis=1)
@@ -611,7 +613,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN100itemid'
+    COMBINED_MODEL_NAME = '17+knn40_tfidf+rf_itemid'
     #17+knn40_tfidf+rf_itemid 17+knn40_tfidf+KNN100itemid
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
@@ -625,7 +627,7 @@ if __name__ == '__main__':
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=True, stratified=True, param_dict=param_dict)
+              save_model=True, stratified=False, param_dict=param_dict)
     """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
