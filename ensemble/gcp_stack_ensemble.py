@@ -26,7 +26,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -50,12 +50,12 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_100',   #fashion
-    'KNN_itemid',       #non-fashion
+    'KNN_itemid_100',   #fashion
+    #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    'rf_itemid',  #non-fashion
+    #'rf_itemid',  #non-fashion
     
 ]
 unwanted_models = [
@@ -377,6 +377,62 @@ def change_wrong_category():
     valid_df['Category'] = categories #TODO this does not work
     valid_df.to_csv(str(psychic_learners_dir / 'data' / 'corrected_{}_valid_split.csv'))
 
+def bayes_search_xgb():
+    bayes_cv_tuner = BayesSearchCV(
+        estimator=xgboost.XGBClassifier(
+            n_jobs=-1,
+            objective='binary:logistic',
+            eval_metric='merror',
+            silent=1,
+            tree_method='approx'
+        ),
+        search_spaces={
+            'learning_rate': (0.01, 1.0, 'log-uniform'),
+            'min_child_weight': (0, 10),
+            'max_depth': (0, 50),
+            'max_delta_step': (0, 20),
+            'subsample': (0.01, 1.0, 'uniform'),
+            'colsample_bytree': (0.01, 1.0, 'uniform'),
+            'colsample_bylevel': (0.01, 1.0, 'uniform'),
+            'reg_lambda': (1e-9, 1000, 'log-uniform'),
+            'reg_alpha': (1e-9, 1.0, 'log-uniform'),
+            'gamma': (1e-9, 0.5, 'log-uniform'),
+            'min_child_weight': (0, 5),
+            'n_estimators': (50, 100),
+            'scale_pos_weight': (1e-6, 500, 'log-uniform')
+        },
+        scoring='roc_auc',
+        cv=StratifiedKFold(
+            n_splits=3,
+            shuffle=True,
+            random_state=42
+        ),
+        n_jobs=3,
+        n_iter=ITERATIONS,
+        verbose=0,
+        refit=True,
+        random_state=42
+    )
+
+
+def status_print(optim_result):
+    """Status callback durring bayesian hyperparameter search"""
+
+    # Get all the models tested so far in DataFrame format
+    all_models = pd.DataFrame(bayes_cv_tuner.cv_results_)
+
+    # Get current parameters and the best parameters
+    best_params = pd.Series(bayes_cv_tuner.best_params_)
+    print('Model #{}\nBest ROC-AUC: {}\nBest params: {}\n'.format(
+        len(all_models),
+        np.round(bayes_cv_tuner.best_score_, 4),
+        bayes_cv_tuner.best_params_
+    ))
+
+    # Save all model results
+    clf_name = bayes_cv_tuner.estimator.__class__.__name__
+    all_models.to_csv(clf_name+"_cv_results.csv")
+
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
@@ -555,7 +611,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+knn40_tfidf+rf_itemid'
+    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN100itemid'
     #17+knn40_tfidf+rf_itemid 17+knn40_tfidf+KNN100itemid
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
