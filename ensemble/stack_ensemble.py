@@ -623,16 +623,17 @@ OVERALL
 8+atten_bilstm 0.7690330277591126
 all_13_xgb 0.7727376190442597
 13+itemid_index_nofashion 0.790656 total, 0.78882 public ldrboard NOT CVED
-
+17_with_itemid fashion_KNN 400 0.79851 PL 
 
 CROSS VALIDATED
 beauty
 150 estimators
 13 + KNN = 82.3857
-13 + tfidf_logreg + KNN_itemid  = 82.4799 BEST
+13 + tfidf_logreg + KNN_itemid  = 82.4799
 13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
 13 + tfidf_logreg + KNN_itemid + rf  = 82.3874
 13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
+17_with_itemid fashion KNN 400 = 
 
 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269
@@ -648,12 +649,13 @@ fashion
 150 estimators
 13 + tfidf logreg = 68.51
 13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB
+17_with_itemid fashion KNN 400 = 
 
 50 estimators
 17_with_itemid KNN 400 = 71.7963
 
 mobile
-
+17_with_itemid fashion KNN 400 = 
 
 
 """
