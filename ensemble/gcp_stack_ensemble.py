@@ -52,7 +52,7 @@ model_names = [
     #'KNN_itemid_400',
     'KNN_itemid',
     'knn5_tfidf',
-    'knn10_tfidf',
+    #'knn10_tfidf',
     #'blend_ensemble',
     #'knn20_tfidf',
     'knn40_tfidf',
