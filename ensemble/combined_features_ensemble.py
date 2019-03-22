@@ -18,7 +18,7 @@ from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
 from tqdm import tqdm
-"""Combines text and image features to form one classifier"""
+"""Combines text and image features to form one classifier. Not used in the end due to mediocre performance"""
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

@@ -2,6 +2,8 @@ import os
 import pandas as pd
 from shutil import copy
 
+"""This script is not used any of the final models and can be ignored"""
+
 EXAMPLES_PER_CLASS = 3000
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 train_split_df = pd.read_csv(os.path.join(psychic_learners_dir,

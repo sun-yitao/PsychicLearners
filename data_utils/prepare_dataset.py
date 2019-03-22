@@ -19,6 +19,8 @@ from nltk.tokenize import word_tokenize
 import pytesseract
 from PIL import Image
 
+"""This script contains functions used to prepare the dataset"""
+
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
 if not os.path.exists(data_directory):
@@ -359,6 +361,7 @@ def change_suspected_wrong(dataframe):
         
 
 def make_csvs():
+    """Persists new csvs to disk"""
     train.to_csv(os.path.join(data_directory, 'train_split.csv'), index=False)
     valid.to_csv(os.path.join(data_directory, 'valid_split.csv'), index=False)
     test.to_csv(os.path.join(data_directory, 'test_split.csv'), index=False)
@@ -386,6 +389,7 @@ def make_csvs():
 
 
 def move_directory_to_big_category(small_category_directory):
+    """Moves original directory of 0-57 categories to their respective big categories"""
     dst, category_number = os.path.split(small_category_directory)
     category_number = int(category_number)
     if category_number in mobile_categories:
@@ -475,7 +479,7 @@ def copy_test_images_to_test_image_dir():
         move_directory_to_big_category(valid_cat_dir)
 
 def check_copied_images_correct():
-    # check that all the images are present without duplicates
+    """test to check that all the images are present without duplicates"""
     images = glob(os.path.join(train_dir, '**', '*.jpg'), recursive=True) + \
             glob(os.path.join(valid_dir, '**', '*.jpg'), recursive=True) + \
             glob(os.path.join(image_directory, 'test', '*.jpg'))
@@ -484,15 +488,46 @@ def check_copied_images_correct():
     original_images = [os.path.split(filename)[-1] for filename in original_images]
     assert sorted(images) == sorted(original_images)
 
+def get_index_at_itemid(orig_df, itemids):
+    """Returns corresponding indexes of itemids"""
+    index_array = []
+    for itemid in itemids:
+        index = orig_df[orig_df['itemid'] == itemid].index[0]
+        index_array.append(index)
+    return index_array
+
+
+def add_original_index_to_df(big_category):
+    train_split_df = pd.read_csv(os.path.join(data_directory, f'{big_category}_train_split.csv'))
+    valid_split_df = pd.read_csv(os.path.join(data_directory, f'{big_category}_valid_split.csv'))
+    test_split_df = pd.read_csv(os.path.join(data_directory, f'{big_category}_test_split.csv'))
+
+    train_itemids = train_split_df['itemid'].values
+    train_indexes = get_index_at_itemid(train_df, train_itemids)
+    train_split_df['index'] = train_indexes
+    train_split_df.to_csv(os.path.join(data_directory, f'{big_category}_train_split.csv'), index=False)
+
+    valid_itemids = valid_split_df['itemid'].values
+    valid_indexes = get_index_at_itemid(train_df, valid_itemids)
+    valid_split_df['index'] = valid_indexes
+    valid_split_df.to_csv(os.path.join(data_directory, f'{big_category}_valid_split.csv'), index=False)
+
+    test_itemids = test_split_df['itemid'].values
+    test_indexes = get_index_at_itemid(test, test_itemids)
+    test_split_df['index'] = test_indexes
+    test_split_df.to_csv(os.path.join(data_directory, f'{big_category}_test_split.csv'), index=False)
+
+
 if __name__ == '__main__':
+    """Call required functions here."""
     #extract_tar_images() 
     #get_translations_dict()  # uncomment this to get a new translation mapping else just load the one already built
     
-    with open('alphabetic_misspelt_and_weird_mappings.json', 'r') as f:
-        misspelt_mappings = json.load(f)
-
+    #with open('alphabetic_misspelt_and_weird_mappings.json', 'r') as f:
+    #    misspelt_mappings = json.load(f)
+    add_original_index_to_df('mobile')
     #check_mislabelling(train)
-    check_mislabelling(valid)
+    #check_mislabelling(valid)
     #check_mislabelling(train_df)
     #make_csvs()
     #get_spelling_mistakes()

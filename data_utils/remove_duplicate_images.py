@@ -6,6 +6,8 @@ from elasticsearch import Elasticsearch
 from image_match.elasticsearch_driver import SignatureES
 # Need to start elastic search $elasticsearch on osx, $sudo service elasticsearch start on ubuntu
 
+"""Originally wanted to remove duplicate images to speed up training with this script but due to a lack of time it was unfinished"""
+
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 image_directory = os.path.join(psychic_learners_dir, 'data', 'image', 'train_v1')
 category_directories = glob(os.path.join(image_directory, '*'))

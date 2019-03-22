@@ -8,6 +8,8 @@ from imgaug import augmenters as iaa
 from multiprocessing import pool
 from multiprocessing.dummy import Pool as ThreadPool
 
+"""This script was not used in the end as increasing the size of the image dataset causes practical problems with storage and transfer"""
+
 # This script will augment all images in a directory to a certain multiple, deleting the original
 # if you wish to keep original please duplicate before running
 train_dir = join(os.path.split(os.getcwd())[0], 'data', 'image',

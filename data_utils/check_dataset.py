@@ -2,6 +2,7 @@ import os
 from glob import glob
 import pandas as pd
 
+"""A test to check if images are placed correctly"""
 
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 image_folder = os.path.join(psychic_learners_dir, 'data', 'image', 'v1_train_nodups_240x240')

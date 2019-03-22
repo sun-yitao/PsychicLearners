@@ -2,9 +2,8 @@ import json
 import os
 from pathlib import Path
 
-#Edit this gordon if you saved the json in a diff path windows: r"C:\path\to\translations\json"
+"""Utility script to remove a certain language from the translations mapping json"""
 PATH_TO_TRANSLATIONS_MAPPING_JSON = '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data_utils/translations_mapping.json'
-#Edit this with the language, usually 2 letter combination eg: en for english. language mapping is in word_to_lang.json
 LANGUAGE_TO_REMOVE = ''
 
 #Below can be unchanged

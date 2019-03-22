@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 
+"""Magpie is not used in the final model so this script can be ignored"""
+
 psychic_learners_dir = os.path.split(os.getcwd())[0]
 data_directory = os.path.join(psychic_learners_dir, 'data')
 big_categories = ['beauty', 'fashion', 'mobile']

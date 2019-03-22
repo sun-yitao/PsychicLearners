@@ -8,6 +8,8 @@ from PIL import Image
 from nltk.tokenize import word_tokenize
 import string
 
+"""This is just a test script to check the pytesseract output"""
+
 data_dir = Path.cwd().parent / 'data'
 test_dir = data_dir / 'image' / 'original' / 'fashion_image'
 
