@@ -86,6 +86,7 @@ def read_probabilties(proba_folder, subset='valid',
     all_probabilities = []
     for folder in proba_folder.iterdir():
         if not folder.is_dir():
+            print('skipping {}'.format(folder))
             continue
         elif model_names and folder.name not in model_names:
             if folder.name not in unwanted_models:
