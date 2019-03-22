@@ -585,7 +585,7 @@ def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, 
 
 def check_output():
     verified_prediction_df = pd.read_csv(str(
-        psychic_learners_dir / 'data' / 'predictions' / '13+itemid_xgb.csv'))
+        psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
     unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' /
                                                COMBINED_MODEL_NAME) + '_xgb.csv')
     verified_output = verified_prediction_df['Category'].values

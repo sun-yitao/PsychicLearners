@@ -26,7 +26,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'beauty'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
