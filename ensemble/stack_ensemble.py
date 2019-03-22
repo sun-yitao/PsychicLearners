@@ -35,7 +35,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'fashion'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
@@ -58,8 +58,8 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_400',
-    'KNN_itemid',
+    'KNN_itemid_200',
+    #'KNN_itemid',
     'knn5_tfidf',
     'knn10_tfidf',
 ]
@@ -75,8 +75,8 @@ unwanted_models = [
     'knn10',
 ]
 
-#if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
-#    raise Exception('Warning KNN itemid in fashion')
+if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
+    raise Exception('Warning KNN itemid in fashion')
 
 N_MODELS = len(model_names)
 print(f'Number Models: {N_MODELS}')
@@ -585,7 +585,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17_with_itemid'
+    COMBINED_MODEL_NAME = '17_with_itemid_fashion_knn_200'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -594,11 +594,11 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    """
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':12,
+    
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1,
      'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
-    """
+    
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
@@ -612,7 +612,7 @@ if __name__ == '__main__':
     #
 
     #predict_all_xgb()
-    check_output()
+    #check_output()
 
 """
 Logs
@@ -653,6 +653,7 @@ fashion
 
 50 estimators
 17_with_itemid KNN 400 = 71.7963
+
 
 mobile
 17_with_itemid fashion KNN 400 = 
