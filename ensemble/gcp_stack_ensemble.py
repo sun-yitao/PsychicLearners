@@ -37,9 +37,9 @@ K.set_session(session)
 psychic_learners_dir = Path.cwd().parent
 BIG_CATEGORY = 'beauty'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / '{}_train_split.csv'.format(BIG_CATEGORY))
-VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
-TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
+VALID_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_valid_split.csv'.format(BIG_CATEGORY))
+TEST_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_test_split.csv'.format(BIG_CATEGORY))
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
 N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
 BATCH_SIZE = 64
@@ -78,7 +78,7 @@ if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
     raise Exception('Warning KNN itemid in fashion')
 
 N_MODELS = len(model_names)
-print(f'Number Models: {N_MODELS}')
+print('Number Models: {}'.format(N_MODELS))
 meta_model_names = []
 
 def read_probabilties(proba_folder, subset='valid',
@@ -92,7 +92,7 @@ def read_probabilties(proba_folder, subset='valid',
             if folder.name not in unwanted_models:
                 print(folder.name, 'not included')
             continue
-        for npy in folder.glob(f'*{subset}.npy'):
+        for npy in folder.glob('*{}.npy'.format(subset)):
             prob = np.load(str(npy))
             if not (prob >= 0).all():
                 prob = softmax(prob, axis=1)
@@ -329,7 +329,7 @@ def extract_text_features(titles, subset):
                     all_text_features.append(text_feature)
     all_text_features = np.array(all_text_features)
     os.makedirs(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn'), exist_ok=True)
-    np.save(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / f'{subset}.npy'), all_text_features)
+    np.save(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / '{}.npy'.format(subset)), all_text_features)
     return all_text_features
 
 
@@ -375,7 +375,7 @@ def change_wrong_category():
             category = confirmed_wrong['expected_category'][confirmed_wrong['itemid'] == itemid].values
         categories.append(category)
     valid_df['Category'] = categories #TODO this does not work
-    valid_df.to_csv(str(psychic_learners_dir / 'data' / f'corrected_{BIG_CATEGORY}_valid_split.csv'))
+    valid_df.to_csv(str(psychic_learners_dir / 'data' / 'corrected_{}_valid_split.csv'))
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
@@ -499,7 +499,7 @@ def predict_all_nn():
 
 def predict_all_xgb():
     beauty_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
         big_category='beauty')
     #beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
@@ -507,7 +507,7 @@ def predict_all_xgb():
                                       'Category': beauty_preds})
 
     fashion_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
         big_category='fashion')
     #fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
@@ -516,7 +516,7 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
         big_category='mobile')
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
@@ -548,7 +548,7 @@ def check_output():
     verified_output = verified_prediction_df['Category'].values
     unverified_output = unverified_prediction_df['Category'].values
     matches = np.sum(verified_output == unverified_output)
-    print(f'Percentage match: {matches / len(verified_output)}')
+    print('Percentage match: {matches / len(verified_output)}')
 
 
 if __name__ == '__main__':
