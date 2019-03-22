@@ -55,7 +55,7 @@ model_names = [
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    'rf_itemid',  #non-fashion
+    #'rf_itemid',  #non-fashion
     
 ]
 unwanted_models = [
@@ -555,7 +555,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17_with_itemid'
+    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN100itemid'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -565,10 +565,10 @@ if __name__ == '__main__':
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
     
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=False, stratified=True, param_dict=param_dict)
+              save_model=True, stratified=True, param_dict=param_dict)
     """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,

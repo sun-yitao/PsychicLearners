@@ -667,6 +667,7 @@ CROSS VALIDATED
 17_with_itemid + knn40_tfidf KNNitemid 200 = 72.5655
 17_with_itemid + knn40_tfidf KNNitemid 150 = 72.9684
 17_with_itemid + knn40_tfidf KNNitemid 100 = 73.7968
+17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 100 = 75.3079
 
 
 ### mobile
