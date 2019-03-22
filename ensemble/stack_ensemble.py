@@ -379,8 +379,8 @@ def change_wrong_category():
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
-    train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
-    train_probs = np.concatenate([train_probs, train_elmo], axis=1)
+    #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
+    #train_probs = np.concatenate([train_probs, train_elmo], axis=1)
     valid_df = pd.read_csv(VALID_CSV)
     train_y = valid_df['Category'].values
     encoder = LabelEncoder()
@@ -540,6 +540,14 @@ def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kag
                   172402*0.3*kaggle_public_acc
     return num_correct/total_examples
 
+def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kaggle_public_acc):
+    total_examples = 57317 + 43941 + 32065 + 172402*0.3
+    num_correct = 57317*val_beauty_acc + \
+                  43941*val_fashion_acc + \
+                  32065*val_mobile_acc + \
+                  172402*0.3*kaggle_public_acc
+    return num_correct/total_examples
+
 def check_output():
     verified_prediction_df = pd.read_csv(str(
         psychic_learners_dir / 'data' / 'predictions' / 'all_13_xgb.csv'))
@@ -561,31 +569,32 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    
+    # DEFAULT
+    """
     param_dict = {'max_depth':6, 'learning_rate':0.05, 'n_estimators':50, 
                  'gamma':0, 'min_child_weight':2, 'max_delta_step':0, 'subsample':1.0, 'colsample_bytree':1.0,
                  'colsample_bylevel':1, 'reg_alpha':0.01, 'reg_lambda':1, 'scale_pos_weight':1,
                  'base_score':0.5, 'random_state':0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
-    """
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)"""
+    
+    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
                   'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
                   'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
 
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 0.9, 'colsample_bytree': 1.0,
+    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
+                  'gamma': 0, 'min_child_weight': 3, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
                   'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
                   'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
 
-    param_dict = {'max_depth': 6, 'learning_rate': 0.05, 'n_estimators': 50,
+    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 0.9, 'colsample_bytree': 1.0,
                   'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
                   'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=False, stratified=True, param_dict=param_dict)"""
+              save_model=False, stratified=True, param_dict=param_dict)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
@@ -596,7 +605,7 @@ if __name__ == '__main__':
     #print(evaluate_total_accuracy(0.79881, 0.68068, 0.84658, 0.76753))  # 8+adv+attn_blstm softmax, normalize
     #print(evaluate_total_accuracy(0.80105, 0.68651, 0.85131, 0.77103))  # all_13_xgb
     #print(evaluate_total_accuracy(0.83035, 0.68651, 0.874267, 0.78882))  # 13+itemid_index
-    
+    #
 
     #predict_all_xgb()
     #check_output()
@@ -624,8 +633,10 @@ beauty
 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269
 13 + tfidf_logreg + KNN_itemid = 82.2863 max depth 6 
-13 + tfidf_logreg + KNN_itemid + knn5_tfidf = 82.3124 BEST
+13 + tfidf_logreg + KNN_itemid + knn5_tfidf = 82.3124
 13 + tfidf_logreg + KNN_itemid - adv + capsulenet = 82.1920
+{'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
+13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3596% BEST
 
 
 fashion
