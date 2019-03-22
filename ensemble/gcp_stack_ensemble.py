@@ -23,7 +23,7 @@ from keras_preprocessing.image import ImageDataGenerator, img_to_array
 from keras import backend as K
 import tensorflow as tf
 import xgboost
-from catboost import CatBoostClassifier, Pool
+#from catboost import CatBoostClassifier, Pool
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
 """Stacking Ensemble using probabilties predicted on validation, validating on public test set
