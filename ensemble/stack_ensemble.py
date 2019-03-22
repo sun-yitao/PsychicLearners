@@ -58,6 +58,7 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
+    #'KNN_itemid_400',
     'KNN_itemid',
     'knn5_tfidf',
     'knn10_tfidf',
@@ -74,8 +75,8 @@ unwanted_models = [
     'knn10',
 ]
 
-if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
-    raise Exception('Warning KNN itemid in fashion')
+#if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
+#    raise Exception('Warning KNN itemid in fashion')
 
 N_MODELS = len(model_names)
 print(f'Number Models: {N_MODELS}')
@@ -426,12 +427,17 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         os.makedirs(str(checkpoint_path), exist_ok=True)
         joblib.dump(classifier, str(checkpoint_path / "xgb.joblib.dat"))
     if extract_probs:
+        X_train, X_valid, y_train, y_valid = train_test_split(train_probs, train_y,
+                                                              stratify=train_y,
+                                                              test_size=0.25, random_state=42)
+        classifier = xgboost.XGBClassifier(**param_dict)
+        classifier.fit(X_train, y_train)
         test_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='test')
-        #val_preds = classifier.predict_proba(X_valid)
+        val_preds = classifier.predict_proba(X_valid)
         test_preds = classifier.predict_proba(test_x)
         print(test_preds.shape)
         os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name), exist_ok=True)
-        #np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'valid.npy'), val_preds)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'valid.npy'), val_preds)
         np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'test.npy'), test_preds)
 
 def meta_meta_learner():
@@ -499,7 +505,7 @@ def predict_all_nn():
 
 def predict_all_xgb():
     beauty_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='beauty')
     #beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
@@ -507,7 +513,7 @@ def predict_all_xgb():
                                       'Category': beauty_preds})
 
     fashion_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='fashion')
     #fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
@@ -516,7 +522,7 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/13+itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='mobile')
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
@@ -560,7 +566,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '13+itemid'
+    COMBINED_MODEL_NAME = '17_with_itemid'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -569,32 +575,11 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    # DEFAULT
-    """
-    param_dict = {'max_depth':6, 'learning_rate':0.05, 'n_estimators':50, 
-                 'gamma':0, 'min_child_weight':2, 'max_delta_step':0, 'subsample':1.0, 'colsample_bytree':1.0,
-                 'colsample_bylevel':1, 'reg_alpha':0.01, 'reg_lambda':1, 'scale_pos_weight':1,
-                 'base_score':0.5, 'random_state':0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)"""
     
-    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':12,
+     'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
 
-    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 3, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
-
-    param_dict = {'max_depth': 8, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 0.9, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=False, stratified=True, param_dict=param_dict)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
@@ -635,8 +620,9 @@ beauty
 13 + tfidf_logreg + KNN_itemid = 82.2863 max depth 6 
 13 + tfidf_logreg + KNN_itemid + knn5_tfidf = 82.3124
 13 + tfidf_logreg + KNN_itemid - adv + capsulenet = 82.1920
-{'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3596% BEST
+{'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 
+'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
+13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3596% BEST aka 17_with_itemid
 
 
 fashion
@@ -644,6 +630,8 @@ fashion
 13 + tfidf logreg = 68.51
 13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB
 
+50 estimators
+17_with_itemid KNN 400 = 71.7963
 
 mobile
 
