@@ -621,7 +621,7 @@ if __name__ == '__main__':
     #print(evaluate_total_accuracy(0.83035, 0.68651, 0.874267, 0.78882))  # 13+itemid_index
     #
 
-    #predict_all_xgb()
+    predict_all_xgb()
     check_output()
 
 """

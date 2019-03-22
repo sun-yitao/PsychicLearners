@@ -50,7 +50,7 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_100',   #fashion
+    'KNN_itemid_200',   #fashion
     #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
@@ -615,7 +615,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN100itemid'
+    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN200itemid'
     #17+knn40_tfidf+rf_itemid 17+knn40_tfidf+KNN100itemid
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
