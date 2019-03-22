@@ -99,6 +99,7 @@ def read_probabilties(proba_folder, subset='valid',
             prob = normalize(prob, axis=1)
             #prob = scale(prob, axis=1)
             all_probabilities.append(prob)
+            print(prob.shape)
 
     all_probabilities = np.concatenate([prob for prob in all_probabilities], axis=1)
     print(all_probabilities.shape)
