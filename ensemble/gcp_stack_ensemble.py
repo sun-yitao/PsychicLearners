@@ -51,10 +51,9 @@ model_names = [
     'multi_head',
     'log_reg_tfidf',
     'KNN_itemid_200',   #fashion
-    'KNN_itemid',       #non-fashion
+    #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
-    #'blend_ensemble',
     'knn40_tfidf',
     'rf_itemid',
     
