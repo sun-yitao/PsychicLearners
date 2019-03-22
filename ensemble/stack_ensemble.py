@@ -35,7 +35,7 @@ session = tf.Session(config=config)
 K.set_session(session)
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'mobile'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
@@ -514,7 +514,26 @@ def predict_all_xgb():
 
     fashion_preds = predict_xgb(
         f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
-        big_category='fashion')
+        big_category='fashion', model_names=[
+            'char_cnn',
+            'extractions_fasttext',
+            'image_model',
+            'title_fasttext',
+            'word_cnn',
+            'word_rnn',
+            'rcnn',
+            'bert_v1',
+            'nb_ngrams_2',
+            'adv_abblstm',
+            'atten_bilstm',
+            'ind_rnn',
+            'multi_head',
+            'log_reg_tfidf',
+            'KNN_itemid_400',
+            #'KNN_itemid',
+            'knn5_tfidf',
+            'knn10_tfidf',
+        ])
     #fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
     fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
@@ -556,7 +575,7 @@ def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, 
 
 def check_output():
     verified_prediction_df = pd.read_csv(str(
-        psychic_learners_dir / 'data' / 'predictions' / 'all_13_xgb.csv'))
+        psychic_learners_dir / 'data' / 'predictions' / '13+itemid_xgb.csv'))
     unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' /
                                                COMBINED_MODEL_NAME) + '_xgb.csv')
     verified_output = verified_prediction_df['Category'].values
@@ -575,11 +594,11 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    
+    """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':12,
      'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
-
+    """
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
@@ -593,7 +612,7 @@ if __name__ == '__main__':
     #
 
     #predict_all_xgb()
-    #check_output()
+    check_output()
 
 """
 Logs

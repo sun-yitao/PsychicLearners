@@ -58,6 +58,7 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
+    #'KNN_itemid_400',
     'KNN_itemid',
     'knn5_tfidf',
     'knn10_tfidf',
@@ -552,7 +553,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '13+itemid'
+    COMBINED_MODEL_NAME = '17_with_itemid'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -562,9 +563,10 @@ if __name__ == '__main__':
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
     
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1, 'verbose':1,
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=False, param_dict=param_dict)
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
+              save_model=False, stratified=True, param_dict=param_dict)
     """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
@@ -608,7 +610,7 @@ OVERALL
 8+atten_bilstm 0.7690330277591126
 all_13_xgb 0.7727376190442597
 13+itemid_index_nofashion 0.790656 total, 0.78882 public ldrboard NOT CVED
-
+17_with_itemid  0.79851 PL 
 
 CROSS VALIDATED
 beauty
