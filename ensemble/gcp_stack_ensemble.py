@@ -58,7 +58,7 @@ model_names = [
     'knn40_tfidf',
     'rf_itemid',
     #'xgb',
-    #'xgb_tfidf',
+    'xgb_tfidf',
 ]
 unwanted_models = [
     'log_reg',
@@ -70,6 +70,7 @@ unwanted_models = [
     'meta',
     'knn5',
     'knn10',
+    'knn20_tfidf'
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:

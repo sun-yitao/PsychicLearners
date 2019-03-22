@@ -79,6 +79,7 @@ unwanted_models = [
     'meta',
     'knn5',
     'knn10',
+    'knn20_tfidf'
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -648,7 +649,9 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid - adv + capsulenet = 82.1920
 {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 
 'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3596% BEST aka 17_with_itemid
+13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3787% BEST aka 17_with_itemid
+17_with_itemid + knn20_tfidf = 82.3369
+17_with_itemid + knn40_tfidf = 82.3892
 
 
 ### fashion
