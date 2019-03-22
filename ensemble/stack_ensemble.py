@@ -62,8 +62,8 @@ model_names = [
     'KNN_itemid', # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
-    'knn40_tfidf',
-    'rf_itemid', #non-fashion
+    #'knn40_tfidf',
+    #'rf_itemid', #non-fashion
 ]
 
 unwanted_models = [
@@ -513,7 +513,7 @@ def predict_all_nn():
 
 def predict_all_xgb():
     beauty_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/17+knn40_tfidf+rf_itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='beauty')
     #beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
@@ -551,7 +551,7 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17+knn40_tfidf+rf_itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='mobile')
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
@@ -595,7 +595,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17_rf_itemid_fashion_knn_100'
+    COMBINED_MODEL_NAME = '17_itemid_fashion_knn_100'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -644,7 +644,7 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
 13 + tfidf_logreg + KNN_itemid + rf  = 82.3874
 13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
-17_with_itemid + knn40_tfidf + rf_itemid = 82.6248
+17_with_itemid + knn40_tfidf + rf_itemid = 82.6248 too dangerous to use rf
 
 # 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269

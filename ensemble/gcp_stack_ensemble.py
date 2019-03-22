@@ -20,13 +20,11 @@ from skopt import BayesSearchCV
 
 import xgboost
 #from catboost import CatBoostClassifier, Pool
-
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
 """Stacking Ensemble using probabilties predicted on validation, validating on public test set
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
+BIG_CATEGORY = 'beauty'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -50,12 +48,11 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_200',   #fashion
-    #'KNN_itemid',       #non-fashion
+    #'KNN_itemid_200',   #fashion
+    'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    #'rf_itemid',  #non-fashion
     
 ]
 unwanted_models = [
@@ -71,6 +68,7 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
+    'rf_itemid', #too dangerous
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -615,8 +613,8 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+knn40_tfidf+KNN200itemid'
-    #17+knn40_tfidf+rf_itemid 17+knn40_tfidf+KNN100itemid
+    COMBINED_MODEL_NAME = '17+knn40_tfidf'
+    #17+knn40_tfidf  17+knn40_tfidf+KNN100itemid
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
