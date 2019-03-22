@@ -26,7 +26,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -50,8 +50,8 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_100',   #fashion
-    'KNN_itemid',       #non-fashion
+    'KNN_itemid_100',   #fashion
+    #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
@@ -101,6 +101,7 @@ def read_probabilties(proba_folder, subset='valid',
 
     all_probabilities = np.concatenate([prob for prob in all_probabilities], axis=1)
     print(all_probabilities.shape)
+    print(N_MODELS * N_CLASSES)
     #all_probabilities = minmax_scale(all_probabilities, axis=1)
     return all_probabilities
 
@@ -564,10 +565,10 @@ if __name__ == '__main__':
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
     
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=True, stratified=True, param_dict=param_dict)
+              save_model=False, stratified=True, param_dict=param_dict)
     """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
                   'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,

@@ -631,7 +631,7 @@ OVERALL
 all_13_xgb 0.7727376190442597
 13+itemid_index_nofashion 0.790656 total, 0.78882 public ldrboard NOT CVED
 17_with_itemid fashion_KNN 400 0.79851 PL 
-17_with_itemid + knn40_tfidf + rf_itemid with fashion KNNitemid 200
+17_with_itemid + knn40_tfidf + rf_itemid with fashion KNNitemid 100 = 
 
 CROSS VALIDATED
 ### beauty
@@ -641,6 +641,7 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
 13 + tfidf_logreg + KNN_itemid + rf  = 82.3874
 13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
+17_with_itemid + knn40_tfidf + rf_itemid = 
 
 # 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269
@@ -649,10 +650,10 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid - adv + capsulenet = 82.1920
 {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 
 'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-17_with_itemid = 82.3787%
+17_with_itemid = 82.3787% LAST PL
 17_with_itemid + knn20_tfidf = 82.3369
 17_with_itemid + knn40_tfidf = 82.3892
-17_with_itemid + knn40_tfidf + rf_itemid = 82.5497
+17_with_itemid + knn40_tfidf + rf_itemid = 82.5497 
 
 
 
@@ -663,9 +664,9 @@ CROSS VALIDATED
 
 #50 estimators
 17_with_itemid KNN 400 = 71.7963
-17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 200 = 72.5655
-17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 150 = 72.9684
-17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 100 = 73.7968
+17_with_itemid + knn40_tfidf KNNitemid 200 = 72.5655
+17_with_itemid + knn40_tfidf KNNitemid 150 = 72.9684
+17_with_itemid + knn40_tfidf KNNitemid 100 = 73.7968
 
 
 ### mobile
