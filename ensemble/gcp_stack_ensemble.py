@@ -79,12 +79,13 @@ if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
 N_MODELS = len(model_names)
 print('Number Models: {}'.format(N_MODELS))
 meta_model_names = []
-
+checked_folders = []
 def read_probabilties(proba_folder, subset='valid',
                       model_names=model_names):
     proba_folder = Path(proba_folder)
     all_probabilities = []
     for folder in proba_folder.iterdir():
+        checked_folders.append(str(folder.name))
         if not folder.is_dir():
             print('skipping {}'.format(folder))
             continue
@@ -99,14 +100,13 @@ def read_probabilties(proba_folder, subset='valid',
             prob = normalize(prob, axis=1)
             #prob = scale(prob, axis=1)
             all_probabilities.append(prob)
-            print(prob.shape)
-
     all_probabilities = np.concatenate([prob for prob in all_probabilities], axis=1)
     print(all_probabilities.shape)
     print(N_MODELS * N_CLASSES)
+    print(sorted(checked_folders))
+    print(sorted(model_names))
     #all_probabilities = minmax_scale(all_probabilities, axis=1)
     return all_probabilities
-
 
 MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS +840,)
 def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0):
