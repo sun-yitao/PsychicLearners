@@ -53,6 +53,12 @@ model_names = [
     'KNN_itemid',
     'knn5_tfidf',
     'knn10_tfidf',
+    'blend_ensemble',
+    'knn20_tfidf',
+    #'knn40_tfidf',
+    #'rf_itemid',
+    #'xgb',
+    #'xgb_tfidf',
 ]
 unwanted_models = [
     'log_reg',

@@ -62,6 +62,12 @@ model_names = [
     #'KNN_itemid',
     'knn5_tfidf',
     'knn10_tfidf',
+    #'blend_ensemble',
+    #'knn20_tfidf', 
+    #'knn40_tfidf',
+    #'rf_itemid',
+    #'xgb',
+    #'xgb_tfidf',
 ]
 unwanted_models = [
     'log_reg',
@@ -626,8 +632,8 @@ all_13_xgb 0.7727376190442597
 17_with_itemid fashion_KNN 400 0.79851 PL 
 
 CROSS VALIDATED
-beauty
-150 estimators
+### beauty
+# 150 estimators
 13 + KNN = 82.3857
 13 + tfidf_logreg + KNN_itemid  = 82.4799
 13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
@@ -635,7 +641,7 @@ beauty
 13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
 17_with_itemid fashion KNN 400 = 
 
-50 estimators
+# 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269
 13 + tfidf_logreg + KNN_itemid = 82.2863 max depth 6 
 13 + tfidf_logreg + KNN_itemid + knn5_tfidf = 82.3124
@@ -645,17 +651,18 @@ beauty
 13 + tfidf_logreg + KNN_itemid + knn5_tfidf + knn10_tfidf = 82.3596% BEST aka 17_with_itemid
 
 
-fashion
-150 estimators
+### fashion
+# 150 estimators
 13 + tfidf logreg = 68.51
 13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB
 17_with_itemid fashion KNN 400 = 
 
-50 estimators
+#50 estimators
 17_with_itemid KNN 400 = 71.7963
 
 
-mobile
+### mobile
+50 estimators
 17_with_itemid fashion KNN 400 = 
 
 
