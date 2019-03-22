@@ -50,7 +50,7 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_150',   #fashion
+    'KNN_itemid_100',   #fashion
     #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',

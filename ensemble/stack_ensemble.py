@@ -659,12 +659,12 @@ CROSS VALIDATED
 ### fashion
 # 150 estimators
 13 + tfidf logreg = 68.51
-13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB
+13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB, K neighbours set too low
 
 #50 estimators
 17_with_itemid KNN 400 = 71.7963
 17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 200 = 72.5655
-
+17_with_itemid + knn40_tfidf + rf_itemid KNNitemid 150 =
 
 
 ### mobile
