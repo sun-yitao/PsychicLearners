@@ -24,7 +24,7 @@ import xgboost
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -48,11 +48,11 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_200',   #fashion
-    'KNN_itemid',       #non-fashion
+    'KNN_itemid_100',   #fashion
+    #'KNN_itemid',       #non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
-    'knn40_tfidf',
+    #'knn40_tfidf',#too dangerous
     
 ]
 unwanted_models = [
@@ -68,7 +68,7 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
-    'rf_itemid', #too dangerous
+    #'rf_itemid', #too dangerous
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -613,7 +613,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+knn40_tfidf'
+    COMBINED_MODEL_NAME = '17+KNN100'
     #17+knn40_tfidf  17+knn40_tfidf+KNN100itemid
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,

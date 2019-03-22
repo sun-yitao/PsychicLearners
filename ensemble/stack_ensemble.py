@@ -79,6 +79,7 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
+    'rf_itemid', #too dangerous
 ]
 
 
@@ -514,7 +515,30 @@ def predict_all_nn():
 def predict_all_xgb():
     beauty_preds = predict_xgb(
         f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
-        big_category='beauty')
+        big_category='beauty',
+        model_names=[
+            'char_cnn',
+            'extractions_fasttext',
+            'image_model',
+            'title_fasttext',
+            'word_cnn',
+            'word_rnn',
+            'rcnn',
+            'bert_v1',
+            'nb_ngrams_2',
+            'adv_abblstm',
+            'atten_bilstm',
+            'ind_rnn',
+            'multi_head',
+            'log_reg_tfidf',
+            #'KNN_itemid_100',  # fashion
+            'KNN_itemid',  # non-fashion
+            'knn5_tfidf',
+            'knn10_tfidf',
+            #'knn40_tfidf',
+            #'rf_itemid', #non-fashion
+        ]
+        )
     #beauty_preds = np.argmax(beauty_preds, axis=1)
     beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
     beauty_preds = pd.DataFrame(data={'itemid': beauty_test['itemid'].values,
@@ -542,7 +566,6 @@ def predict_all_xgb():
             'knn5_tfidf',
             'knn10_tfidf',
             'knn40_tfidf',
-            #'rf_itemid',  # non-fashion
         ])
     #fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
@@ -551,8 +574,29 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
-        big_category='mobile')
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17+knn40_tfidf/xgb.joblib.dat',
+        big_category='mobile',
+        model_names=[
+            'char_cnn',
+            'extractions_fasttext',
+            'image_model',
+            'title_fasttext',
+            'word_cnn',
+            'word_rnn',
+            'rcnn',
+            'bert_v1',
+            'nb_ngrams_2',
+            'adv_abblstm',
+            'atten_bilstm',
+            'ind_rnn',
+            'multi_head',
+            'log_reg_tfidf',
+            #'KNN_itemid_400',  # fashion
+            'KNN_itemid',  # non-fashion
+            'knn5_tfidf',
+            'knn10_tfidf',
+            'knn40_tfidf',
+        ])
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
     mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
