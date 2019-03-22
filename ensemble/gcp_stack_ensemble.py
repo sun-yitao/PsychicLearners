@@ -16,6 +16,7 @@ from sklearn import metrics
 from sklearn.externals import joblib
 from nltk import word_tokenize
 from tqdm import tqdm
+from bayes_opt import BayesianOptimization
 
 import xgboost
 #from catboost import CatBoostClassifier, Pool
@@ -57,8 +58,8 @@ model_names = [
     #'knn20_tfidf',
     'knn40_tfidf',
     'rf_itemid',
-    #'xgb',
-    'xgb_tfidf',
+    'xgb',
+    #'xgb_tfidf',
 ]
 unwanted_models = [
     'log_reg',
@@ -432,6 +433,20 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name), exist_ok=True)
         #np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'valid.npy'), val_preds)
         np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'test.npy'), test_preds)
+
+
+def xgb_evaluate(max_depth, gamma, colsample_bytree):
+    params = {'eval_metric': 'rmse',
+              'max_depth': int(max_depth),
+              'subsample': 0.8,
+              'eta': 0.1,
+              'gamma': gamma,
+              'colsample_bytree': colsample_bytree}
+    # Used around 1000 boosting rounds in the full model
+    cv_result = xgb.cv(params, dtrain, num_boost_round=100, nfold=3)
+
+    # Bayesian optimization only knows how to maximize, not minimize, so return the negative RMSE
+    return -1.0 * cv_result['test-rmse-mean'].iloc[-1]
 
 def meta_meta_learner():
     meta_xgb_val_prob = np.load(os.path.join(ROOT_PROBA_FOLDER, model_name, 'valid.npy'))
