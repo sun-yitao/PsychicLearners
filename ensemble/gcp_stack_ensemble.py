@@ -37,7 +37,7 @@ K.set_session(session)
 psychic_learners_dir = Path.cwd().parent
 BIG_CATEGORY = 'beauty'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
+TRAIN_CSV = str(psychic_learners_dir / 'data' / '{}_train_split.csv'.format(BIG_CATEGORY))
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
 TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
