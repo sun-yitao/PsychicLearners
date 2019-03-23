@@ -21,6 +21,7 @@ BATCH_SIZE = 64
 LR_BASE = 0.01
 LR_DECAY_FACTOR = 1
 
+"""We ran into problems with models trained on python 3.5 on GCP so this script helps to convert the models to python 3.6 and test for correctness"""
 
 if __name__ == '__main__':
     config = tf.ConfigProto()

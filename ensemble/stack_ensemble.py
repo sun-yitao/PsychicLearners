@@ -121,6 +121,7 @@ def read_probabilties(proba_folder, subset='valid',
 
 MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS,)
 def ensemble_model(dense1=None, dense2=None, n_layers=4, dropout=0.25, k_reg=0):
+    """Creates NN ensemble model"""
     k_regularizer = keras.regularizers.l2(k_reg)
     input_tensor = keras.layers.Input(shape=MODEL_INPUT_SHAPE)
     if dense1:
@@ -150,6 +151,7 @@ def ensemble_model(dense1=None, dense2=None, n_layers=4, dropout=0.25, k_reg=0):
 
 TWO_HEAD_SHAPE = int(N_CLASSES * N_MODELS / 2)
 def two_head_ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0.00000001):
+    """Not used due to no performance gains"""
     k_regularizer = keras.regularizers.l2(k_reg)
     input_tensor = keras.layers.Input(shape=(TWO_HEAD_SHAPE,))
     x = layers.Dense(dense1, activation=None, kernel_initializer='he_uniform',
@@ -177,9 +179,7 @@ def train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001,
              lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
              model_name='1', extract_probs=False):
-
-    
-    
+    """Train NN ensemble, extract_probs=False will perform 4 fold CV. extract_probs=True will save probabilities against validation fold and save model"""
     train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     train_y = pd.read_csv(VALID_CSV)['Category'].values
     
@@ -252,6 +252,7 @@ def train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001,
 def train_two_head_model(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_2_head'),
           model_name='1'):
+    """Not used"""
     model = two_head_ensemble_model(dense1=200, dense2=200,  # mobile may need more dropout
                                     dropout=0.3, k_reg=0.00000001)
     decay = lr_base/(epochs * lr_decay_factor)
@@ -319,7 +320,7 @@ TEXT_MODEL_PATH = str(psychic_learners_dir / 'data' / 'keras_checkpoints' /
                       BIG_CATEGORY / 'word_cnn' / '0.8223667828685259.ckpt-686000')
 
 def extract_text_features(titles, subset):
-    """titles: array of titles"""
+    """titles: array of titles, not used"""
     test_x = build_word_dataset(titles, word_dict, WORD_MAX_LEN)
     graph = tf.Graph()
     all_text_features = []
@@ -350,6 +351,7 @@ def extract_text_features(titles, subset):
 
 
 def train_catboost(model_name, extract_probs=False, save_model=False):
+    """Not used"""
     train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     train_y = pd.read_csv(VALID_CSV)['Category'].values
     X_train, X_valid, y_train, y_valid = train_test_split(train_x, train_y,
@@ -430,6 +432,7 @@ def train_adaboost_extra_trees(model_name, extract_probs=False, save_model=False
                              'meta', model_name + '_ada', 'test.npy'), test_preds)
 
 def change_wrong_category():
+    """Not used due to lack of submissions"""
     valid_df = pd.read_csv(VALID_CSV)
     with open('/Users/sunyitao/Downloads/all_corrected_wrongs.txt') as f:
         checked_itemids = f.readlines()
@@ -447,7 +450,9 @@ def change_wrong_category():
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
         raise Exception('Warning KNN itemid in fashion')
-
+    """KNN itemid is gives good performance on validation but very poor performance on public leaderboard due to different itemid distributions
+       extract_probs=False, save_model=False, stratified=True to perform 4 fold CV
+       extract_probs=True, save_model=True, stratified=False to save out-of-fold probabilities and model"""
     train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
     #train_probs = np.concatenate([train_probs, train_elmo], axis=1)
@@ -497,6 +502,7 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
 
 
 def bayes_search_xgb(param_dict):
+    """Bayesian optimisation of xgb parameters"""
     train_probs = read_probabilties(proba_folder=os.path.join(
         ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     valid_df = pd.read_csv(VALID_CSV)
@@ -573,6 +579,7 @@ def predict_catboost(model_path, big_category, model_names=model_names):
     return predictions
 
 def predict_all_nn():
+    """For the first few versions of our ensemble we used solely NN as meta-learner. Not used in later versions"""
     beauty_preds = predict_keras(
         '/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined/all_13_checkpoints/model.07-0.80.h5',
         big_category='beauty')
@@ -605,6 +612,8 @@ def predict_all_nn():
 
 
 def predict_all_xgb():
+    """In the second iteration of our algorithm we used xgb as meta-learner which provides better performance by about 0.5%
+       pass the path to model and level-1 model names to each of the 3 predict_xgb functions"""
     beauty_preds = predict_xgb(
         f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/all_19_KNN200_rf_itemid_saved_model/xgb.joblib.dat',
         big_category='beauty',
@@ -705,6 +714,7 @@ def predict_all_xgb():
 
 
 def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kaggle_public_acc):
+    """This was before we used cross validation we used a 75/25 split of validation data"""
     val_split = 0.25
     total_examples = 57317*val_split + 43941*val_split + 32065*val_split + 172402*0.3
     num_correct = 57317*val_split*val_beauty_acc + \
@@ -714,6 +724,7 @@ def evaluate_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kag
     return num_correct/total_examples
 
 def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, kaggle_public_acc=None):
+    """Utility function to evaluate results, pass kaggle_public_acc=False to evaluate local CV score"""
     if kaggle_public_acc:
         total_examples = 57317 + 43941 + 32065 + 172402*0.3
         num_correct = 57317*val_beauty_acc + \
@@ -730,6 +741,7 @@ def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, 
 
 
 def check_output():
+    """Utility function to compare a new prediction csv with one that is known to be reliable"""
     #verified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
     verified_prediction_df = pd.read_csv('/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/predictions/all_19_KNN200_rf_itemid_xgb.csv')
     #unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / COMBINED_MODEL_NAME) + '_xgb.csv')
@@ -753,15 +765,10 @@ def check_output():
 
 if __name__ == '__main__':
     COMBINED_MODEL_NAME = 'all_19_KNN400_50_rf_itemid'
-    #TODO adaboost_fashion adaboost_mobile
-    """
+    
     train_nn(dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
-             model_name=COMBINED_MODEL_NAME, extract_probs=True)"""
-    #change_wrong_category()
-    #predict_all_nn()
-    #check_output()
-    #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
+             model_name=COMBINED_MODEL_NAME, extract_probs=True)
     
     param_dict = {'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1,
                   'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
@@ -877,7 +884,7 @@ Optimized mobile Weights Score: 0.8800049893975302
 """
 
 
-#XGBoost Params
+#XGBoost optimised params
 #Beauty
 {'scale_pos_weight': 1e-06, 'max_depth': 6, 'min_child_weight': 0, 'reg_lambda': 0.0002520244082129099, 'subsample': 1.0, 'reg_alpha': 1.0, 'gamma': 1e-09, 'n_jobs': -1,
  'learning_rate': 0.04765713942024485, 'n_estimators': 300, 'colsample_bylevel': 0.7, 'max_delta_step': 0, 'colsample_bytree': 0.7}

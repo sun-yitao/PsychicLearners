@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import numpy as np
-
+"""converts bert output probabilities to .npy files"""
 psychic_learners_dir = Path.cwd().parent
 tsv_dir = psychic_learners_dir / 'data' / 'tsvs' / 'bert_output'
 prob_dir = psychic_learners_dir / 'data' / 'probabilities'
