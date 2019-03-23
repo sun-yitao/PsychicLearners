@@ -868,6 +868,7 @@ dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 = 81.9862
 #mobile
 dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 86.9550
 
+Final weights
 Equal Weights Score: 0.823
 Optimized beauty Weights: [2.26304628e-01 7.73323638e-01 3.71734207e-04]
 Optimized beauty Weights Score: 0.8272156315422191
@@ -877,6 +878,16 @@ Optimized fashion Weights Score: 0.7356635718186784
 Equal Weights Score: 0.878
 Optimized mobile Weights: [0.32213879 0.56155284 0.11630837]
 Optimized mobile Weights Score: 0.8800049893975302
+
+Equal Weights Score: 0.823
+Optimized beauty Weights: [0.22207012 0.772792   0.00513788]
+Optimized beauty Weights Score: 0.8272156315422191
+Equal Weights Score: 0.734
+Optimized fashion Weights: [0.24182756 0.75672089 0.00145155]
+Optimized fashion Weights Score: 0.741398143091207
+Equal Weights Score: 0.878
+Optimized mobile Weights: [0.29369731 0.58890224 0.11740045]
+Optimized mobile Weights Score: 0.8798802544592741
 """
 
 

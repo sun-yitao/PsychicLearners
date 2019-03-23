@@ -1,3 +1,0 @@
-https://arxiv.org/pdf/1710.05381.pdf over and under sampling
-https://www.analyticsvidhya.com/blog/2018/04/a-comprehensive-guide-to-understand-and-implement-text-classification-in-python/
-https://github.com/titu1994/keras-squeeze-excite-network
