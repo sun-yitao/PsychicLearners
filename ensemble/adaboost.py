@@ -386,9 +386,9 @@ def train_adaboost_extra_trees(model_name, extract_probs=False, save_model=False
             #'min_samples_leaf': range(20,50,5),
             #'min_samples_split': range(15,36,5),
         }
-        base_estim = ensemble.ExtraTreesClassifier(n_estimators=80, criterion='gini', max_depth=None, min_samples_split=10,  # 80.8347
-                                                   min_samples_leaf=1, max_features='auto',)
-        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=60, learning_rate=1.0, 
+        base_estim = ensemble.ExtraTreesClassifier(n_estimators=100, criterion='gini', max_depth=None, min_samples_split=2,  #80.8748
+                                                   min_samples_leaf=1, max_features='auto')
+        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=70, learning_rate=1.0, 
                                                  algorithm='SAMME.R')
     if stratified:
         kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)

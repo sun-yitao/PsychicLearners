@@ -33,7 +33,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
 """Stacked Ensemble using probabilties predicted on validation and test"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'mobile'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
@@ -750,9 +750,9 @@ def check_output():
 
 if __name__ == '__main__':
     COMBINED_MODEL_NAME = 'all_19_KNN200_rf_itemid'
-    train_nn(dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
+    train_nn(dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
-             model_name=COMBINED_MODEL_NAME, extract_probs=False)
+             model_name=COMBINED_MODEL_NAME, extract_probs=True)
     #change_wrong_category()
     #predict_all_nn()
     #check_output()
@@ -849,13 +849,13 @@ dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9706
 dense1=200, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9879
 dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 82.0821
 dense1=200, dense2=32, n_layers=5, dropout=0.2, k_reg=0.00000001 = 81.8798
-dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 = 
+dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 = 81.9862
 
 # fashion
 
 
 #mobile
-
+dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 86.9550
 
 
 """
@@ -863,17 +863,17 @@ dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 =
 
 #XGBoost Params
 #Beauty
-{'scale_pos_weight': 1e-06, 'max_depth': 6, 'min_child_weight': 0, 'reg_lambda': 0.0002520244082129099, 'subsample': 1.0, 'reg_alpha': 1.0, 'gamma': 1e-09,
+{'scale_pos_weight': 1e-06, 'max_depth': 6, 'min_child_weight': 0, 'reg_lambda': 0.0002520244082129099, 'subsample': 1.0, 'reg_alpha': 1.0, 'gamma': 1e-09, 'n_jobs': -1,
  'learning_rate': 0.04765713942024485, 'n_estimators': 300, 'colsample_bylevel': 0.7, 'max_delta_step': 0, 'colsample_bytree': 0.7}
 
 
 #Fashion
-{'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137,
+{'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1,
  'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
   'colsample_bytree': 0.9963806925444163}
 
 
 #Mobile
 {'reg_alpha': 1.39396399160069e-05, 'max_delta_step': 14, 'min_child_weight': 1, 'n_estimators': 121, 'max_depth': 9, 'scale_pos_weight': 6.469256426969229, 
-'reg_lambda': 0.00014688520690860323, 'colsample_bylevel': 0.801039079293723, 'gamma': 0.003861473967931348, 'subsample': 0.72444526943941, 
+ 'reg_lambda': 0.00014688520690860323, 'colsample_bylevel': 0.801039079293723, 'gamma': 0.003861473967931348, 'subsample': 0.72444526943941, 'n_jobs': -1,
 'colsample_bytree': 0.9291329385418159, 'learning_rate': 0.08916516649776571}

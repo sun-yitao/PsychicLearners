@@ -106,8 +106,6 @@ def read_probabilties(proba_folder, subset='valid',
     all_probabilities = np.concatenate([prob for prob in all_probabilities], axis=1)
     print(all_probabilities.shape)
     print(N_MODELS * N_CLASSES)
-    print(sorted(checked_folders))
-    print(sorted(model_names))
     #all_probabilities = minmax_scale(all_probabilities, axis=1)
     return all_probabilities
 
@@ -450,6 +448,7 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
     if param_dict:
         print(param_dict)
         classifier = xgboost.XGBClassifier(**param_dict)
+        classifier._Booster.set_param("nthread", 1)
     else:
         classifier = xgboost.XGBClassifier(
             max_depth=5, learning_rate=0.05, n_estimators=150, silent=True,
@@ -627,8 +626,8 @@ if __name__ == '__main__':
     param_dict = {'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1,
                   'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
                   'colsample_bytree': 0.9963806925444163}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=True,
-              save_model=True, stratified=True, param_dict=param_dict)
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
+              save_model=False, stratified=True, param_dict=param_dict)
     #bayes_search_xgb(param_dict)
 
     
