@@ -34,7 +34,7 @@ python run_classifier.py \
   --num_train_epochs=60 \
   --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_large
 
-  ##BERT LARGE 
+  ##BERT LARGE 0.7601933
 python run_classifier.py \
   --task_name=beauty \
   --do_train=true \
@@ -44,13 +44,31 @@ python run_classifier.py \
   --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/beauty \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_large/model.ckpt-3000.ckpt \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_large/model.ckpt-137559 \
   --max_seq_length=16 \
   --train_batch_size=100 \
   --eval_batch_size=100 \
   --learning_rate=0.00005 \
   --num_train_epochs=60 \
   --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_large
+
+    ##BERT LARGE
+python run_classifier.py \
+  --task_name=mobile \
+  --do_train=true \
+  --do_eval=true \
+  --do_lower_case=True \
+  --do_print_test=True \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/unclean_untranslated/mobile \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/mobile_large/model.ckpt-4000 \
+  --max_seq_length=16 \
+  --train_batch_size=90 \
+  --eval_batch_size=90 \
+  --learning_rate=0.00005 \
+  --num_train_epochs=60 \
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/mobile_large
 
 --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
 export BERT_BASE_DIR=/home/paperspace/bert_multi_uncased
@@ -74,24 +92,27 @@ python run_classifier.py \
   --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/mobile_exp2
 
 ## beauty extractions
-  python run_classifier.py \
+python run_classifier.py \
   --task_name=beauty \
-  --do_train=true \
-  --do_eval=true \
-  --do_lower_case=True \
-  --do_print_test=True \
-  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/extractions/beauty \
+  --do_predict=true \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
-  --max_seq_length=32 \
-  --train_batch_size=256 \
-  --eval_batch_size=256 \
-  --learning_rate=0.00005 \
-  --num_train_epochs=40 \
-  --output_dir=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_ext
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_large/model.ckpt-137559 \
+  --max_seq_length=16 \
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/beauty/test
 
   python run_classifier.py \
+  --task_name=fashion \
+  --do_predict=true \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_large/model.ckpt-41193 \
+  --max_seq_length=16 \
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/fashion/test
+
+python run_classifier.py \
   --task_name=fashion \
   --do_predict=true \
   --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
@@ -100,13 +121,3 @@ python run_classifier.py \
   --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1/model.ckpt-44626 \
   --max_seq_length=16 \
   --output_dir=/home/paperspace/PsychicLearners/data/bert_output/fashion/test
-
-python extract_features.py \
-  --input_file=/home/paperspace/PsychicLearners/data/fashion_train_sentences.txt \
-  --output_file=/home/paperspace/PsychicLearners/data/fashion_train_features.jsonl \
-  --vocab_file=$BERT_BASE_DIR/vocab.txt \
-  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/exp_6/model.ckpt-6865 \
-  --layers=-1 \
-  --max_seq_length=15 \
-  --batch_size=512

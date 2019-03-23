@@ -58,11 +58,11 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_100',  # fashion
-    'KNN_itemid', # non-fashion
+    'KNN_itemid_100',  # fashion
+    #'KNN_itemid', # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
-    #'knn40_tfidf',
+    'knn40_tfidf',
     #'rf_itemid', #non-fashion
 ]
 
@@ -574,7 +574,7 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17+knn40_tfidf/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
         big_category='mobile',
         model_names=[
             'char_cnn',
@@ -585,7 +585,7 @@ def predict_all_xgb():
             'word_rnn',
             'rcnn',
             'bert_v1',
-            'nb_ngrams_2',
+            #'nb_ngrams_2',
             'adv_abblstm',
             'atten_bilstm',
             'ind_rnn',
@@ -595,7 +595,7 @@ def predict_all_xgb():
             'KNN_itemid',  # non-fashion
             'knn5_tfidf',
             'knn10_tfidf',
-            'knn40_tfidf',
+            #'knn40_tfidf',
         ])
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
@@ -628,18 +628,29 @@ def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, 
     return num_correct/total_examples
 
 def check_output():
-    verified_prediction_df = pd.read_csv(str(
-        psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
-    unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' /
-                                               COMBINED_MODEL_NAME) + '_xgb.csv')
+    
+    verified_prediction_df = pd.read_csv(
+        str(psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
+    unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / COMBINED_MODEL_NAME) + '_xgb.csv')
     verified_output = verified_prediction_df['Category'].values
     unverified_output = unverified_prediction_df['Category'].values
+    beauty_verified = verified_output[:76545]
+    fashion_verified = verified_output[76545:131985]
+    mobile_verified = verified_output[131985:]
+    beauty_unverified = unverified_output[:76545]
+    fashion_unverified = unverified_output[76545:131985]
+    mobile_unverified = unverified_output[131985:]
     matches = np.sum(verified_output == unverified_output)
+    beauty_matches = np.sum(beauty_verified == beauty_unverified)
+    fashion_matches = np.sum(fashion_verified == fashion_unverified)
+    mobile_matches = np.sum(mobile_verified == mobile_unverified)
     print(f'Percentage match: {matches / len(verified_output)}')
-
+    print(f'Beauty matches: {beauty_matches / len(beauty_verified)}')
+    print(f'Fashion matches: {fashion_matches / len(fashion_verified)}')
+    print(f'Mobile matches: {mobile_matches / len(mobile_verified)}')
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17_itemid_fashion_knn_100'
+    COMBINED_MODEL_NAME = '17+40tfidf_KNN100_cpu'
     """
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -648,10 +659,10 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    """
+    
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1,
      'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)"""
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
     
 
     
@@ -665,8 +676,8 @@ if __name__ == '__main__':
     #print(evaluate_total_accuracy(0.83035, 0.68651, 0.874267, 0.78882))  # 13+itemid_index
     #
 
-    predict_all_xgb()
-    check_output()
+    #predict_all_xgb()
+    #check_output()
 
 """
 Logs

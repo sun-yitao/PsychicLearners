@@ -24,7 +24,7 @@ import xgboost
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
+BIG_CATEGORY = 'beauty'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -48,13 +48,14 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_100',   #fashion
-    #'KNN_itemid',       #non-fashion
+    #'KNN_itemid_150',  # fashion
+    'KNN_itemid',  # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
-    #'knn40_tfidf',#too dangerous
-    
+    'knn40_tfidf',
+    'rf_itemid',  # non-fashion
 ]
+
 unwanted_models = [
     'log_reg',
     'capsule_net',
@@ -68,7 +69,6 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
-    #'rf_itemid', #too dangerous
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -378,60 +378,55 @@ def change_wrong_category():
     valid_df.to_csv(str(psychic_learners_dir / 'data' / 'corrected_{}_valid_split.csv'))
 
 def bayes_search_xgb():
+    train_probs = read_probabilties(proba_folder=os.path.join(
+        ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
+    valid_df = pd.read_csv(VALID_CSV)
+    train_y = valid_df['Category'].values
+    encoder = LabelEncoder()
+    train_y = encoder.fit_transform(train_y)
+
     bayes_cv_tuner = BayesSearchCV(
-        estimator=xgboost.XGBClassifier(
-            n_jobs=-1,
-            objective='binary:logistic',
-            eval_metric='merror',
-            silent=1,
-            tree_method='approx'
-        ),
+        estimator=xgboost.XGBClassifier(**param_dict),
         search_spaces={
             'learning_rate': (0.01, 1.0, 'log-uniform'),
-            'min_child_weight': (0, 10),
-            'max_depth': (0, 50),
+            'min_child_weight': (0, 4),
+            'max_depth': (6, 9),
             'max_delta_step': (0, 20),
-            'subsample': (0.01, 1.0, 'uniform'),
-            'colsample_bytree': (0.01, 1.0, 'uniform'),
-            'colsample_bylevel': (0.01, 1.0, 'uniform'),
+            'subsample': (0.7, 1.0, 'uniform'),
+            'colsample_bytree': (0.7, 1.0, 'uniform'),
+            'colsample_bylevel': (0.7, 1.0, 'uniform'),
             'reg_lambda': (1e-9, 1000, 'log-uniform'),
             'reg_alpha': (1e-9, 1.0, 'log-uniform'),
             'gamma': (1e-9, 0.5, 'log-uniform'),
-            'min_child_weight': (0, 5),
-            'n_estimators': (50, 100),
+            'n_estimators': (50, 300),
             'scale_pos_weight': (1e-6, 500, 'log-uniform')
         },
-        scoring='roc_auc',
-        cv=StratifiedKFold(
-            n_splits=3,
-            shuffle=True,
-            random_state=42
-        ),
-        n_jobs=3,
-        n_iter=ITERATIONS,
-        verbose=0,
+        cv=StratifiedKFold(n_splits=4, random_state=7, shuffle=True),
+        n_jobs=-1,
+        n_iter=100,
+        verbose=1,
         refit=True,
-        random_state=42
+        random_state=7
     )
 
+    def status_print(optim_result):
+        """Status callback durring bayesian hyperparameter search"""
 
-def status_print(optim_result):
-    """Status callback durring bayesian hyperparameter search"""
+        # Get all the models tested so far in DataFrame format
+        all_models = pd.DataFrame(bayes_cv_tuner.cv_results_)
 
-    # Get all the models tested so far in DataFrame format
-    all_models = pd.DataFrame(bayes_cv_tuner.cv_results_)
+        # Get current parameters and the best parameters
+        best_params = pd.Series(bayes_cv_tuner.best_params_)
+        print('Model #{}\nBest ROC-AUC: {}\nBest params: {}\n'.format(
+            len(all_models),
+            np.round(bayes_cv_tuner.best_score_, 4),
+            bayes_cv_tuner.best_params_
+        ))
 
-    # Get current parameters and the best parameters
-    best_params = pd.Series(bayes_cv_tuner.best_params_)
-    print('Model #{}\nBest ROC-AUC: {}\nBest params: {}\n'.format(
-        len(all_models),
-        np.round(bayes_cv_tuner.best_score_, 4),
-        bayes_cv_tuner.best_params_
-    ))
-
-    # Save all model results
-    clf_name = bayes_cv_tuner.estimator.__class__.__name__
-    all_models.to_csv(clf_name+"_cv_results.csv")
+        # Save all model results
+        clf_name = bayes_cv_tuner.estimator.__class__.__name__
+        all_models.to_csv(clf_name+"_cv_results.csv")
+        result = bayes_cv_tuner.fit(train_probs, train_y, callback=status_print)
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     if stratified and save_model:
@@ -623,30 +618,12 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    
+    """
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=True, stratified=False, param_dict=param_dict)
-    """
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
-
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 0.9, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
-
-    param_dict = {'max_depth': 6, 'learning_rate': 0.05, 'n_estimators': 50,
-                  'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 0.9, 'colsample_bytree': 1.0,
-                  'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1,
-                  'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=False, stratified=True, param_dict=param_dict)"""
+              save_model=True, stratified=False, param_dict=param_dict)"""
+    bayes_search_xgb()
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
