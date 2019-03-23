@@ -4,6 +4,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 import autokeras
 from autokeras.text import text_preprocessor, text_supervised
 
+"""Did not implement due to out of RAM errors"""
+
 data_directory = os.path.join('..', 'data')
 train = pd.read_csv(os.path.join(data_directory, 'train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'valid_split.csv'))

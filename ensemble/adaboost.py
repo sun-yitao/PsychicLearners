@@ -30,7 +30,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
 """Stacked Ensemble using probabilties predicted on validation and test"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
@@ -56,12 +56,12 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_200',  # fashion
-    'KNN_itemid',  # non-fashion
+    'knn_itemid_400_50',  # fashion
+    #'KNN_itemid',  # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    'rf_itemid',  # non-fashion
+    #'rf_itemid',  # non-fashion
 
 ]
 
@@ -386,7 +386,7 @@ def train_adaboost_extra_trees(model_name, extract_probs=False, save_model=False
             #'min_samples_leaf': range(20,50,5),
             #'min_samples_split': range(15,36,5),
         }
-        base_estim = ensemble.ExtraTreesClassifier(n_estimators=110, criterion='gini', max_depth=None, min_samples_split=2,  #80.8748
+        base_estim = ensemble.ExtraTreesClassifier(n_estimators=110, criterion='gini', max_depth=None, min_samples_split=2, # 80.8766%
                                                    min_samples_leaf=1, max_features='auto')
         classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=60, learning_rate=1.0, 
                                                  algorithm='SAMME.R')
@@ -693,7 +693,7 @@ def check_output():
     print(f'Mobile matches: {mobile_matches / len(mobile_verified)}')
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = 'all_19_KNN200_rf_itemid'
+    COMBINED_MODEL_NAME = 'all_19_KNN400_50_rf_itemid'
     """
     train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.0, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
@@ -706,7 +706,7 @@ if __name__ == '__main__':
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1,
      'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)"""
-    train_adaboost_extra_trees(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True)
+    train_adaboost_extra_trees(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)

@@ -1,3 +1,4 @@
+import os
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -19,9 +20,13 @@ ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 
 def ensemble_predictions(weights, big_category, subset='valid'):
 	# make predictions
+    if big_category == 'fashion':
+        model_name = 'all_19_KNN400_50_rf_itemid'
+    else:
+        model_name = 'all_19_KNN200_rf_itemid'
     out_of_fold_val_1 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_nn', f'{subset}.npy'))
     out_of_fold_val_2 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_xgb', f'{subset}.npy'))
-    out_of_fold_val_3 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_nn', f'{subset}.npy'))
+    out_of_fold_val_3 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_ada', f'{subset}.npy'))
     yhats = [out_of_fold_val_1, out_of_fold_val_2, out_of_fold_val_3]
     yhats = array(yhats)
     # weighted sum across ensemble members
@@ -113,4 +118,4 @@ def get_weights_for_big_category(big_category):
     return weights
 
 if __name__ == '__main__':
-    predict_all_to_csv(combined_model_name='all_19_KNN100_rf_itemid')
+    predict_all_to_csv(combined_model_name='all_19_KNN400_50_rf_itemid_xgb')

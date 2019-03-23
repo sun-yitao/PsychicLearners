@@ -33,7 +33,7 @@ os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
 """Stacked Ensemble using probabilties predicted on validation and test"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'mobile'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
@@ -59,12 +59,12 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_200',  # fashion
-    'KNN_itemid',  # non-fashion
+    'knn_itemid_400_50',  # fashion
+    #'KNN_itemid',  # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    'rf_itemid',  # non-fashion
+    #'rf_itemid',  # non-fashion
 
 ]
 
@@ -606,7 +606,7 @@ def predict_all_nn():
 
 def predict_all_xgb():
     beauty_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/beauty/combined_xgb/all_19_KNN200_rf_itemid_saved_model/xgb.joblib.dat',
         big_category='beauty',
         model_names=[
             'char_cnn',
@@ -623,12 +623,12 @@ def predict_all_xgb():
             'ind_rnn',
             'multi_head',
             'log_reg_tfidf',
-            #'KNN_itemid_100',  # fashion
+            #'KNN_itemid_200',  # fashion
             'KNN_itemid',  # non-fashion
             'knn5_tfidf',
             'knn10_tfidf',
-            #'knn40_tfidf',
-            #'rf_itemid', #non-fashion
+            'knn40_tfidf',
+            'rf_itemid', #non-fashion
         ]
         )
     #beauty_preds = np.argmax(beauty_preds, axis=1)
@@ -637,7 +637,7 @@ def predict_all_xgb():
                                       'Category': beauty_preds})
 
     fashion_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/17+knn40_tfidf+KNN100itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/all_19_KNN200_rf_itemid_saved_model/xgb.joblib.dat',
         big_category='fashion', model_names=[
             'char_cnn',
             'extractions_fasttext',
@@ -653,11 +653,12 @@ def predict_all_xgb():
             'ind_rnn',
             'multi_head',
             'log_reg_tfidf',
-            'KNN_itemid_100',  # fashion
+            'KNN_itemid_200',  # fashion
             #'KNN_itemid',  # non-fashion
             'knn5_tfidf',
             'knn10_tfidf',
             'knn40_tfidf',
+            #'rf_itemid',  # non-fashion
         ])
     #fashion_preds = np.argmax(fashion_preds, axis=1)
     fashion_preds = fashion_preds + 17
@@ -666,7 +667,7 @@ def predict_all_xgb():
                                        'Category': fashion_preds})
 
     mobile_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/17_with_itemid_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/mobile/combined_xgb/all_19_KNN200_rf_itemid_saved_model/xgb.joblib.dat',
         big_category='mobile',
         model_names=[
             'char_cnn',
@@ -677,7 +678,7 @@ def predict_all_xgb():
             'word_rnn',
             'rcnn',
             'bert_v1',
-            #'nb_ngrams_2',
+            'nb_ngrams_2',
             'adv_abblstm',
             'atten_bilstm',
             'ind_rnn',
@@ -687,7 +688,8 @@ def predict_all_xgb():
             'KNN_itemid',  # non-fashion
             'knn5_tfidf',
             'knn10_tfidf',
-            #'knn40_tfidf',
+            'knn40_tfidf',
+            'rf_itemid',  # non-fashion
         ])
     #mobile_preds = np.argmax(mobile_preds, axis=1)
     mobile_preds = mobile_preds + 31
@@ -728,9 +730,10 @@ def evaluate_cv_total_accuracy(val_beauty_acc, val_fashion_acc, val_mobile_acc, 
 
 
 def check_output():
-    verified_prediction_df = pd.read_csv(
-        str(psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
-    unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / COMBINED_MODEL_NAME) + '_xgb.csv')
+    #verified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / '17_with_itemid_xgb.csv'))
+    verified_prediction_df = pd.read_csv('/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/predictions/all_19_KNN200_rf_itemid_xgb.csv')
+    #unverified_prediction_df = pd.read_csv(str(psychic_learners_dir / 'data' / 'predictions' / COMBINED_MODEL_NAME) + '_xgb.csv')
+    unverified_prediction_df = pd.read_csv('/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/predictions/all_19_KNN100_rf_itemid_weighted_metameta.csv')
     verified_output = verified_prediction_df['Category'].values
     unverified_output = unverified_prediction_df['Category'].values
     beauty_verified = verified_output[:76545]
@@ -749,18 +752,21 @@ def check_output():
     print(f'Mobile matches: {mobile_matches / len(mobile_verified)}')
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = 'all_19_KNN200_rf_itemid'
+    COMBINED_MODEL_NAME = 'all_19_KNN400_50_rf_itemid'
+    #TODO adaboost_fashion adaboost_mobile
+    """
     train_nn(dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
-             model_name=COMBINED_MODEL_NAME, extract_probs=True)
+             model_name=COMBINED_MODEL_NAME, extract_probs=True)"""
     #change_wrong_category()
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    """
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1,
-     'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)"""
+    
+    param_dict = {'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1,
+                  'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
+                  'colsample_bytree': 0.9963806925444163}
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
     
 
     
@@ -773,9 +779,10 @@ if __name__ == '__main__':
     #print(evaluate_total_accuracy(0.80105, 0.68651, 0.85131, 0.77103))  # all_13_xgb
     #print(evaluate_total_accuracy(0.83035, 0.68651, 0.874267, 0.78882))  # 13+itemid_index
     #
-
+    #print(evaluate_cv_total_accuracy(0.823787, 0.730594, 0.8768))
     #predict_all_xgb()
     #check_output()
+
 
 """
 Logs
@@ -787,7 +794,7 @@ OVERALL
 all_13_xgb 0.7727376190442597
 13+itemid_index_nofashion 0.790656 total, 0.78882 PL
 17_with_itemid fashion_KNN 400 0.79851 PL 
-17_with_itemid + knn40_tfidf + rf_itemid with fashion KNNitemid 100 = 
+all_19_KNN100_rf_itemid_weighted_metameta.csv = 0.8058964 total 0.80286 PL 0.80707444 internal CV
 
 XGB
 # beauty
@@ -831,7 +838,8 @@ XGB
 
 ## bayesian optimised
 17_with_itemid + knn40_tfidf with KNNitemid 100 = 74.05
-17_with_itemid + knn40_tfidf with KNNitemid 200 = 
+17_with_itemid + knn40_tfidf with KNNitemid 200 = 73.0594
+17_with_itemid + knn40_tfidf with KNNitemid 50_400 = 73.8628
 
 # mobile
 ## 150 estimators
@@ -857,7 +865,15 @@ dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 = 81.9862
 #mobile
 dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 86.9550
 
-
+Equal Weights Score: 0.823
+Optimized beauty Weights: [2.26304628e-01 7.73323638e-01 3.71734207e-04]
+Optimized beauty Weights Score: 0.8272156315422191
+Equal Weights Score: 0.731
+Optimized fashion Weights: [0.23452134 0.65202972 0.11344894]
+Optimized fashion Weights Score: 0.7356635718186784
+Equal Weights Score: 0.878
+Optimized mobile Weights: [0.32213879 0.56155284 0.11630837]
+Optimized mobile Weights Score: 0.8800049893975302
 """
 
 

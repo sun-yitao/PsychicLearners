@@ -8,6 +8,8 @@ import multiprocessing
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 multiprocessing.set_start_method('forkserver')
 
+"""Did not implement as the script gets stuck at 0% and unable to fix"""
+
 data_directory = os.path.join(os.path.split(os.getcwd())[0], 'data')
 train = pd.read_csv(os.path.join(data_directory, 'fashion_train_split.csv'))
 valid = pd.read_csv(os.path.join(data_directory, 'fashion_valid_split.csv'))

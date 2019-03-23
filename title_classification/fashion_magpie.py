@@ -10,6 +10,8 @@ config.gpu_options.per_process_gpu_memory_fraction = 0.6
 session = tf.Session(config=config)
 keras.backend.set_session(session)
 
+"""Did not implement due to poor performance"""
+
 data_dir = Path.cwd().parent / 'data'
 labels = [str(x) for x in range(17,31)]
 ckpt_dir = data_dir / 'magpie' / 'checkpoints' / 'fashion' / 'v2_cnn' #Change this
