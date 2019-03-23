@@ -828,11 +828,10 @@ XGB
 17_with_itemid + knn40_tfidf KNNitemid 200 = 72.5655
 17_with_itemid + knn40_tfidf KNNitemid 150 = 72.9684
 17_with_itemid + knn40_tfidf KNNitemid 100 = 73.7968
-17_with_itemid + knn40_tfidf with KNNitemid 100 = 75.3079
 
 ## bayesian optimised
 17_with_itemid + knn40_tfidf with KNNitemid 100 = 74.05
-
+17_with_itemid + knn40_tfidf with KNNitemid 200 = 
 
 # mobile
 ## 150 estimators
@@ -850,7 +849,7 @@ dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9706
 dense1=200, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9879
 dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 82.0821
 dense1=200, dense2=32, n_layers=5, dropout=0.2, k_reg=0.00000001 = 81.8798
-dense1=200, dense2=48, n_layers=4, dropout=0.3
+dense1=200, dense2=48, n_layers=4, dropout=0.3, k_reg=0.00000001 = 
 
 # fashion
 
@@ -861,21 +860,20 @@ dense1=200, dense2=48, n_layers=4, dropout=0.3
 
 """
 
-"""
-XGBoost Params
-Beauty
-{'scale_pos_weight': 1e-06, 'max_depth': 6, 'min_child_weight': 0, 'reg_lambda': 0.0002520244082129099, 'subsample': 1.0, 'reg_alpha': 1.0, 'gamma': 1e-09
-, 'learning_rate': 0.04765713942024485, 'n_estimators': 300, 'colsample_bylevel': 0.7, 'max_delta_step': 0, 'colsample_bytree': 0.7}
+
+#XGBoost Params
+#Beauty
+{'scale_pos_weight': 1e-06, 'max_depth': 6, 'min_child_weight': 0, 'reg_lambda': 0.0002520244082129099, 'subsample': 1.0, 'reg_alpha': 1.0, 'gamma': 1e-09,
+ 'learning_rate': 0.04765713942024485, 'n_estimators': 300, 'colsample_bylevel': 0.7, 'max_delta_step': 0, 'colsample_bytree': 0.7}
 
 
-Fashion
-{'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 1
-37, 'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126, 'colsample_bytree': 0.9963806925444163}
+#Fashion
+{'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137,
+ 'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
+  'colsample_bytree': 0.9963806925444163}
 
 
-Mobile
-{'reg_alpha': 1.39396399160069e-05, 'max_delta_step': 14, 'min_child_weight': 1, 'n_estimators': 121, 'max_depth': 9, 'scale_pos_weight': 6.46925642696922
-9, 'reg_lambda': 0.00014688520690860323, 'colsample_bylevel': 0.801039079293723, 'gamma': 0.003861473967931348, 'subsample': 0.72444526943941, 'colsample_bytree': 0.92
-91329385418159, 'learning_rate': 0.08916516649776571}
-
-"""
+#Mobile
+{'reg_alpha': 1.39396399160069e-05, 'max_delta_step': 14, 'min_child_weight': 1, 'n_estimators': 121, 'max_depth': 9, 'scale_pos_weight': 6.469256426969229, 
+'reg_lambda': 0.00014688520690860323, 'colsample_bylevel': 0.801039079293723, 'gamma': 0.003861473967931348, 'subsample': 0.72444526943941, 
+'colsample_bytree': 0.9291329385418159, 'learning_rate': 0.08916516649776571}

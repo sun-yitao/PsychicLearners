@@ -434,26 +434,19 @@ def bayes_search_xgb(param_dict):
         all_models.to_csv(clf_name+"_cv_results.csv")
     result = bayes_cv_tuner.fit(train_probs, train_y, callback=status_print)
 
+
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
-    if stratified and save_model:
-        raise Exception('Stratified and save model on')
-    train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
+    if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
+        raise Exception('Warning KNN itemid in fashion')
+
+    train_probs = read_probabilties(proba_folder=os.path.join(
+        ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     #train_elmo = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'elmo' / 'valid_flat.npy'))
     #train_probs = np.concatenate([train_probs, train_elmo], axis=1)
     valid_df = pd.read_csv(VALID_CSV)
     train_y = valid_df['Category'].values
     encoder = LabelEncoder()
     train_y = encoder.fit_transform(train_y)
-    """
-    train_text_features = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / 'valid.npy'))
-    #train_x = np.concatenate([train_probs, train_text_features], axis=1)
-    count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', 
-                                 stop_words=None, ngram_range=(1, 3))
-    title_encoded = count_vect.fit_transform(valid_df['title'])
-    title_encoded = title_encoded.toarray()
-    print(title_encoded[0])
-    print(title_encoded.shape, train_probs.shape, train_text_features.shape)
-    train_x = np.concatenate([train_probs, title_encoded], axis=1)"""
     if param_dict:
         print(param_dict)
         classifier = xgboost.XGBClassifier(**param_dict)
@@ -466,9 +459,11 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
             base_score=0.5, random_state=0, seed=None, missing=None)
     if stratified:
         kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)
-        results = cross_val_score(classifier, train_probs, train_y, cv=kfold, n_jobs=-1, )
-        print("Accuracy: %.4f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
-    elif not stratified and not save_model:
+        results = cross_val_score(
+            classifier, train_probs, train_y, cv=kfold, n_jobs=-1, )
+        print("Accuracy: %.4f%% (%.2f%%)" %
+              (results.mean()*100, results.std()*100))
+    elif not stratified:
         X_train, X_valid, y_train, y_valid = train_test_split(train_probs, train_y,
                                                               stratify=train_y,
                                                               test_size=0.25, random_state=42)
@@ -479,19 +474,24 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         predictions = classifier.predict(X_valid)
         print('Valid accuracy: ', metrics.accuracy_score(predictions, y_valid))
     if save_model:
-        classifier.fit(train_probs, train_y)
+        assert not stratified
         checkpoint_path = psychic_learners_dir / 'data' / 'keras_checkpoints' / \
             BIG_CATEGORY / 'combined_xgb' / '{}_saved_model'.format(model_name)
         os.makedirs(str(checkpoint_path), exist_ok=True)
         joblib.dump(classifier, str(checkpoint_path / "xgb.joblib.dat"))
     if extract_probs:
-        test_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='test')
-        #val_preds = classifier.predict_proba(X_valid)
+        assert not stratified
+        test_x = read_probabilties(proba_folder=os.path.join(
+            ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='test')
+        val_preds = classifier.predict_proba(X_valid)
         test_preds = classifier.predict_proba(test_x)
         print(test_preds.shape)
-        os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name), exist_ok=True)
-        #np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'valid.npy'), val_preds)
-        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'test.npy'), test_preds)
+        os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                                 'meta', model_name + '_xgb'), exist_ok=True)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                             'meta', model_name + '_xgb', 'valid.npy'), val_preds)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                             'meta', model_name + '_xgb', 'test.npy'), test_preds)
 
 
 
@@ -614,8 +614,7 @@ def check_output():
 
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = '17+KNN100'
-    #17+knn40_tfidf  17+knn40_tfidf+KNN100itemid
+    COMBINED_MODEL_NAME = 'all_19_KNN200_rf_itemid'
     """ 
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
           checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
@@ -625,12 +624,11 @@ if __name__ == '__main__':
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
     
-    {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'objective':'multi:softmax',
-                  'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0,} #'tree_method':'gpu_hist'}
-    param_dict = {'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1, 'objective': 'multi:softmax',
-         'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 
-         'max_depth': 7, 'learning_rate': 0.126, 'colsample_bytree': 0.9963806925444163}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
+    param_dict = {'min_child_weight': 3, 'gamma': 0.00043042962756640143, 'colsample_bylevel': 0.872677186090371, 'scale_pos_weight': 28.589594129413953, 'n_estimators': 137, 'n_jobs': -1,
+                  'reg_alpha': 4.06423528965959e-07, 'reg_lambda': 3.621346391467108e-05, 'max_delta_step': 8, 'subsample': 0.9269871195796154, 'max_depth': 7, 'learning_rate': 0.126,
+                  'colsample_bytree': 0.9963806925444163}
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=True,
+              save_model=True, stratified=True, param_dict=param_dict)
     #bayes_search_xgb(param_dict)
 
     
@@ -646,3 +644,9 @@ if __name__ == '__main__':
 
     #predict_all_xgb()
     #check_output()
+
+"""
+    {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'objective':'multi:softmax',
+                  'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0,} #'tree_method':'gpu_hist'}
+
+"""
