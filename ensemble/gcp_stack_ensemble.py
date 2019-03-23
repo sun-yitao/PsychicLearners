@@ -448,7 +448,6 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
     if param_dict:
         print(param_dict)
         classifier = xgboost.XGBClassifier(**param_dict)
-        classifier._Booster.set_param("nthread", 1)
     else:
         classifier = xgboost.XGBClassifier(
             max_depth=5, learning_rate=0.05, n_estimators=150, silent=True,
