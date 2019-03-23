@@ -545,7 +545,7 @@ def predict_all_xgb():
                                       'Category': beauty_preds})
 
     fashion_preds = predict_xgb(
-        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/17+40tfidf_KNN100_cpu_saved_model/xgb.joblib.dat',
+        f'/Users/sunyitao/Documents/Projects/GitHub/PsychicLearners/data/keras_checkpoints/fashion/combined_xgb/17+knn40_tfidf+KNN100itemid_saved_model/xgb.joblib.dat',
         big_category='fashion', model_names=[
             'char_cnn',
             'extractions_fasttext',
