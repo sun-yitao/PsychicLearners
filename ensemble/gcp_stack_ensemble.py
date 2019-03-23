@@ -55,8 +55,8 @@ model_names = [
     'knn40_tfidf',
     'rf_itemid',  # non-fashion
     #'bert_large',
-    'knn80_tfidf',
-    #'knn160_tfidf',
+    #'knn80_tfidf',
+    'knn160_tfidf',
     #'nb_extractions',
 ]
 
