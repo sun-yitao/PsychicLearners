@@ -377,7 +377,7 @@ def change_wrong_category():
     valid_df['Category'] = categories #TODO this does not work
     valid_df.to_csv(str(psychic_learners_dir / 'data' / 'corrected_{}_valid_split.csv'))
 
-def bayes_search_xgb():
+def bayes_search_xgb(param_dict):
     train_probs = read_probabilties(proba_folder=os.path.join(
         ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     valid_df = pd.read_csv(VALID_CSV)
@@ -618,12 +618,11 @@ if __name__ == '__main__':
     #predict_all_nn()
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
-    """
+    
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'verbosity':2,
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False,
-              save_model=True, stratified=False, param_dict=param_dict)"""
-    bayes_search_xgb()
+    #train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
+    bayes_search_xgb(param_dict)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
