@@ -712,7 +712,10 @@ CROSS VALIDATED
 17_with_itemid + knn20_tfidf = 82.3369
 17_with_itemid + knn40_tfidf = 82.3892
 17_with_itemid + knn40_tfidf + rf_itemid = 82.5497 
-
+17_with_itemid + knn40_tfidf + rf_itemid + bert_large = 82.5497
+17_with_itemid + knn40_tfidf + rf_itemid + knn80_tfidf = 82.4835
+17_with_itemid + knn40_tfidf + rf_itemid = 
+17_with_itemid + knn40_tfidf + rf_itemid =
 
 
 ### fashion
