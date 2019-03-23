@@ -24,7 +24,7 @@ import xgboost
     probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'beauty'
+BIG_CATEGORY = 'fashion'
 print(BIG_CATEGORY)
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / 'csvs' / '{}_train_split.csv'.format(BIG_CATEGORY))
@@ -48,16 +48,13 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    #'KNN_itemid_150',  # fashion
-    'KNN_itemid',  # non-fashion
+    'KNN_itemid_100',  # fashion
+    #'KNN_itemid',  # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    'rf_itemid',  # non-fashion
-    #'bert_large',
-    #'knn80_tfidf',
-    #'knn160_tfidf',
-    'nb_extractions',
+    #'rf_itemid',  # non-fashion
+
 ]
 
 unwanted_models = [
@@ -73,6 +70,10 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
+    'bert_large',
+    'knn80_tfidf',
+    'knn160_tfidf',
+    'nb_extractions',
 ]
 
 if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
@@ -626,8 +627,8 @@ if __name__ == '__main__':
     
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'objective':'multi:softmax',
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
-    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
-    #bayes_search_xgb(param_dict)
+    #train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
+    bayes_search_xgb(param_dict)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)

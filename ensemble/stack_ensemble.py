@@ -4,6 +4,9 @@ from pathlib import Path
 import pickle
 import re
 
+import plaidml.keras
+plaidml.keras.install_backend()
+
 from PIL import Image
 import pandas as pd
 import numpy as np
@@ -26,16 +29,11 @@ import xgboost
 from catboost import CatBoostClassifier, Pool
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # workaround for macOS mkl issue
-"""Stacking Ensemble using probabilties predicted on validation, validating on public test set
-    probs from ml-ensemble, fasttext, bert, combined-features classifier"""
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-session = tf.Session(config=config)
-K.set_session(session)
+"""Stacked Ensemble using probabilties predicted on validation and test"""
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
+BIG_CATEGORY = 'beauty'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
 TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
 VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
@@ -43,6 +41,8 @@ TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
 N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
 N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
 BATCH_SIZE = 64
+
+# list of models to include in  stack
 model_names = [
     'char_cnn',
     'extractions_fasttext',
@@ -58,12 +58,13 @@ model_names = [
     'ind_rnn',
     'multi_head',
     'log_reg_tfidf',
-    'KNN_itemid_100',  # fashion
-    #'KNN_itemid', # non-fashion
+    #'KNN_itemid_100',  # fashion
+    'KNN_itemid',  # non-fashion
     'knn5_tfidf',
     'knn10_tfidf',
     'knn40_tfidf',
-    #'rf_itemid', #non-fashion
+    'rf_itemid',  # non-fashion
+
 ]
 
 unwanted_models = [
@@ -79,7 +80,10 @@ unwanted_models = [
     'knn20_tfidf',
     'xgb',
     'xgb_tfidf',
-    'rf_itemid', #too dangerous
+    'bert_large',
+    'knn80_tfidf',
+    'knn160_tfidf',
+    'nb_extractions',
 ]
 
 
@@ -90,6 +94,7 @@ meta_model_names = []
 
 def read_probabilties(proba_folder, subset='valid',
                       model_names=model_names):
+    """Reads saved .npy validation and test predicted probabilities from PsychicLearners/data/probabilities"""
     proba_folder = Path(proba_folder)
     all_probabilities = []
     for folder in proba_folder.iterdir():
@@ -113,8 +118,8 @@ def read_probabilties(proba_folder, subset='valid',
     return all_probabilities
 
 
-MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS +840,)
-def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0):
+MODEL_INPUT_SHAPE = (N_CLASSES * N_MODELS,)
+def ensemble_model(dense1=None, dense2=None, n_layers=4, dropout=0.25, k_reg=0):
     k_regularizer = keras.regularizers.l2(k_reg)
     input_tensor = keras.layers.Input(shape=MODEL_INPUT_SHAPE)
     if dense1:
@@ -124,21 +129,13 @@ def ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0):
         x = layers.Dropout(dropout)(x)
         x = layers.BatchNormalization()(x)
     if dense2:
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
-                         kernel_regularizer=k_regularizer)(x)
-        x = layers.PReLU()(x)
-        x = layers.Dropout(dropout)(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
-                         kernel_regularizer=k_regularizer)(x)
-        x = layers.PReLU()(x)
-        x = layers.Dropout(dropout)(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
-                         kernel_regularizer=k_regularizer)(x)
-        x = layers.PReLU()(x)
+        for n in range(n_layers-1):
+            x = layers.Dense(dense2, activation=None, kernel_initializer='he_uniform',
+                            kernel_regularizer=k_regularizer)(x)
+            x = layers.PReLU()(x)
+            if not n == n_layers-2: # Don't want dropout and BN on last layer
+                x = layers.Dropout(dropout)(x)
+                x = layers.BatchNormalization()(x)
 
     if dense1:
         predictions = layers.Dense(N_CLASSES, activation='softmax', kernel_regularizer=k_regularizer)(x)
@@ -175,18 +172,18 @@ def two_head_ensemble_model(dense1=None, dense2=None, dropout=0.25, k_reg=0.0000
     return model
 
 def train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
-          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
+          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
           model_name='1', extract_probs=False):
-    model = ensemble_model(dense1=100, dense2=32,   #mobile may need more dropout
+    model = ensemble_model(dense1=200, dense2=32, n_layers=4,  #mobile may need more dropout
                            dropout=0.2, k_reg=0.00000001)
     decay = lr_base/(epochs * lr_decay_factor)
     sgd = keras.optimizers.SGD(
         lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
 
     # callbacks
-    checkpoint_path = os.path.join( checkpoint_dir, '{}_checkpoints'.format(model_name))
+    checkpoint_path = os.path.join(checkpoint_dir, '{}_checkpoints'.format(model_name))
     os.makedirs(checkpoint_path, exist_ok=True)
-    ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.2f}.h5'),
+    ckpt = keras.callbacks.ModelCheckpoint(os.path.join(checkpoint_path, 'model.{epoch:02d}-{val_acc:.4f}.h5'),
                                            monitor='val_acc', verbose=1, save_best_only=True)
     early_stopping = keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0.00001, patience=5)
 
@@ -200,15 +197,15 @@ def train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
     kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)
     cvscores = []
     encoder = OneHotEncoder(sparse=False)
-    y_train = encoder.fit_transform(train_y.reshape(-1, 1))
-    for train, test in kfold.split(train_x, y_train):
+    for train, test in kfold.split(train_x, train_y):
+        y_train = encoder.fit_transform(train_y.reshape(-1, 1))
         model.fit(x=train_x[train], y=y_train[train], batch_size=BATCH_SIZE, epochs=1000, verbose=2, 
                   callbacks=[ckpt, early_stopping], validation_data=(train_x[test], y_train[test]),
                   shuffle=True, class_weight=None, steps_per_epoch=None, validation_steps=None)
         scores = model.evaluate(train_x[test], y_train[test], verbose=0)
         print("%s: %.4f%%" % (model.metrics_names[1], scores[1]*100))
         cvscores.append(scores[1] * 100)
-    print("%.4f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
+    print("CV ACC %.4f%% (+/- %.2f%%)" % (np.mean(cvscores), np.std(cvscores)))
 
     if extract_probs:
         X_train, X_valid, y_train, y_valid = train_test_split(train_x, y_train,
@@ -346,13 +343,6 @@ def train_catboost(model_name, extract_probs=False, save_model=False):
     X_train, X_valid, y_train, y_valid = train_test_split(train_x, train_y,
                                                           stratify=train_y,
                                                           test_size=0.25, random_state=42)
-    #encoder = OneHotEncoder(sparse=False)
-    #y_train = encoder.fit_transform(y_train.reshape(-1, 1))
-    #y_valid = encoder.fit_transform(y_valid.reshape(-1, 1))
-    """
-    classifier = CatBoostClassifier(
-        iterations=150, learning_rate=0.03, depth=8, l2_leaf_reg=3, 
-        loss_function='MultiClass', border_count=32)"""
     classifier = CatBoostClassifier(
         iterations=150, learning_rate=0.03, depth=9, l2_leaf_reg=2,
         loss_function='MultiClass', border_count=32)
@@ -368,6 +358,66 @@ def train_catboost(model_name, extract_probs=False, save_model=False):
         checkpoint_path = psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_catboost' / '{}_saved_model'.format(model_name)
         os.makedirs(str(checkpoint_path), exist_ok=True)
         classifier.save_model(str(checkpoint_path / 'catboost_model'))
+
+
+def train_third_meta(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
+    if BIG_CATEGORY == 'fashion' and 'KNN_itemid' in model_names:
+        raise Exception('Warning KNN itemid in fashion')
+
+    train_probs = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
+    valid_df = pd.read_csv(VALID_CSV)
+    train_y = valid_df['Category'].values
+    encoder = LabelEncoder()
+    train_y = encoder.fit_transform(train_y)
+    if param_dict:
+        print(param_dict)
+        classifier = xgboost.XGBClassifier(**param_dict)
+    else:
+        classifier = xgboost.XGBClassifier(
+            max_depth=5, learning_rate=0.05, n_estimators=150, silent=True,
+            objective='binary:logistic', booster='gbtree', n_jobs=-1, nthread=None,
+            gamma=0, min_child_weight=2, max_delta_step=0, subsample=1.0, colsample_bytree=1.0,
+            colsample_bylevel=1, reg_alpha=0.01, reg_lambda=1, scale_pos_weight=1,
+            base_score=0.5, random_state=0, seed=None, missing=None)
+    if stratified:
+        kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)
+        results = cross_val_score(
+            classifier, train_probs, train_y, cv=kfold, n_jobs=-1, )
+        print("Accuracy: %.4f%% (%.2f%%)" %
+              (results.mean()*100, results.std()*100))
+    elif not stratified and not save_model:
+        X_train, X_valid, y_train, y_valid = train_test_split(train_probs, train_y,
+                                                              stratify=train_y,
+                                                              test_size=0.25, random_state=42)
+        classifier.fit(X_train, y_train)
+        # predict the labels on validation dataset
+        predictions = classifier.predict(X_train)
+        print('Train Acc: {}'.format(metrics.accuracy_score(predictions, y_train)))
+        predictions = classifier.predict(X_valid)
+        print('Valid accuracy: ', metrics.accuracy_score(predictions, y_valid))
+    if save_model:
+        classifier.fit(train_probs, train_y)
+        checkpoint_path = psychic_learners_dir / 'data' / 'keras_checkpoints' / \
+            BIG_CATEGORY / 'combined_xgb' / '{}_saved_model'.format(model_name)
+        os.makedirs(str(checkpoint_path), exist_ok=True)
+        joblib.dump(classifier, str(checkpoint_path / "xgb.joblib.dat"))
+    if extract_probs:
+        X_train, X_valid, y_train, y_valid = train_test_split(train_probs, train_y,
+                                                              stratify=train_y,
+                                                              test_size=0.25, random_state=42)
+        classifier = xgboost.XGBClassifier(**param_dict)
+        classifier.fit(X_train, y_train)
+        test_x = read_probabilties(proba_folder=os.path.join(
+            ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='test')
+        val_preds = classifier.predict_proba(X_valid)
+        test_preds = classifier.predict_proba(test_x)
+        print(test_preds.shape)
+        os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                                 'meta', model_name + '_xgb'), exist_ok=True)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                             'meta', model_name + '_xgb', 'valid.npy'), val_preds)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,
+                             'meta', model_name + '_xgb', 'test.npy'), test_preds)
 
 def change_wrong_category():
     valid_df = pd.read_csv(VALID_CSV)
@@ -395,16 +445,6 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
     train_y = valid_df['Category'].values
     encoder = LabelEncoder()
     train_y = encoder.fit_transform(train_y)
-    """
-    train_text_features = np.load(str(psychic_learners_dir / 'data' / 'features' / BIG_CATEGORY / 'word_cnn' / 'valid.npy'))
-    #train_x = np.concatenate([train_probs, train_text_features], axis=1)
-    count_vect = CountVectorizer(analyzer='word', strip_accents='unicode', 
-                                 stop_words=None, ngram_range=(1, 3))
-    title_encoded = count_vect.fit_transform(valid_df['title'])
-    title_encoded = title_encoded.toarray()
-    print(title_encoded[0])
-    print(title_encoded.shape, train_probs.shape, train_text_features.shape)
-    train_x = np.concatenate([train_probs, title_encoded], axis=1)"""
     if param_dict:
         print(param_dict)
         classifier = xgboost.XGBClassifier(**param_dict)
@@ -445,9 +485,9 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         val_preds = classifier.predict_proba(X_valid)
         test_preds = classifier.predict_proba(test_x)
         print(test_preds.shape)
-        os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name), exist_ok=True)
-        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'valid.npy'), val_preds)
-        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name, 'test.npy'), test_preds)
+        os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name + '_xgb'), exist_ok=True)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name + '_xgb', 'valid.npy'), val_preds)
+        np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,  'meta', model_name + '_xgb', 'test.npy'), test_preds)
 
 def meta_meta_learner():
     meta_xgb_val_prob = np.load(os.path.join(ROOT_PROBA_FOLDER, model_name, 'valid.npy'))
@@ -650,11 +690,11 @@ def check_output():
     print(f'Mobile matches: {mobile_matches / len(mobile_verified)}')
 
 if __name__ == '__main__':
-    COMBINED_MODEL_NAME = 'test'
-    """
+    COMBINED_MODEL_NAME = 'all_19_KNN100_rfitemid'
+    
     train_nn(lr_base=0.01, epochs=50, lr_decay_factor=1,
-          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined'),
-          model_name=COMBINED_MODEL_NAME)"""
+          checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
+          model_name=COMBINED_MODEL_NAME, extract_probs=False)
     #change_wrong_category()
     #predict_all_nn()
     #check_output()
@@ -676,8 +716,8 @@ if __name__ == '__main__':
     #print(evaluate_total_accuracy(0.83035, 0.68651, 0.874267, 0.78882))  # 13+itemid_index
     #
 
-    predict_all_xgb()
-    check_output()
+    #predict_all_xgb()
+    #check_output()
 
 """
 Logs
@@ -699,7 +739,7 @@ CROSS VALIDATED
 13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
 13 + tfidf_logreg + KNN_itemid + rf  = 82.3874
 13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
-17_with_itemid + knn40_tfidf + rf_itemid = 82.6248 too dangerous to use rf
+17_with_itemid + knn40_tfidf + rf_itemid = 82.6248
 
 # 50 estimators
 13 + tfidf_logreg + KNN_itemid = 82.2269
@@ -735,6 +775,16 @@ CROSS VALIDATED
 ### mobile
 150 estimators
 17_with_itemid + knn40_tfidf + rf_itemid = 87.5974
+
+
+"""
+"""
+NN
+[100][32][32][32] 82.7645
+[100][32][32][32] last layer dropout and BN 82.6755
+ensemble_model(dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001) = 83.2932
+
+
 
 
 """
