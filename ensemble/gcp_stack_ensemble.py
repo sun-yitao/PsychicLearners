@@ -402,6 +402,7 @@ def bayes_search_xgb(param_dict):
             'scale_pos_weight': (1e-6, 500, 'log-uniform')
         },
         cv=StratifiedKFold(n_splits=4, random_state=7, shuffle=True),
+        scoring='accuracy',
         n_jobs=-1,
         n_iter=100,
         verbose=1,
