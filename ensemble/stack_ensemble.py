@@ -387,13 +387,9 @@ def train_adaboost_extra_trees(model_name, extract_probs=False, save_model=False
         print(param_dict)
         classifier = xgboost.XGBClassifier(**param_dict)
     else:
-        base_estim = ensemble.ExtraTreesClassifier(n_estimators='warn', criterion='gini',
-                                                   max_depth=None, min_samples_split=2, min_samples_leaf=1,
-                                                   min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None,
-                                                   min_impurity_decrease=0.0, min_impurity_split=None, bootstrap=False,
-                                                   oob_score=False, n_jobs=None, random_state=None, verbose=0,
-                                                   warm_start=False, class_weight=None)
-        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=50, learning_rate=1.0, 
+        base_estim = ensemble.ExtraTreesClassifier(n_estimators=110, criterion='gini', max_depth=None, min_samples_split=2,  # 80.8766%
+                                                   min_samples_leaf=1, max_features='auto')
+        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=60, learning_rate=1.0,
                                                  algorithm='SAMME.R')
     if stratified:
         kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)
