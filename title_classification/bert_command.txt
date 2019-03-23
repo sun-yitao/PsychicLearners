@@ -95,29 +95,30 @@ python run_classifier.py \
 python run_classifier.py \
   --task_name=beauty \
   --do_predict=true \
-  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/beauty/valid \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
   --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/beauty_large/model.ckpt-137559 \
   --max_seq_length=16 \
-  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/beauty/test
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/beauty/valid
 
   python run_classifier.py \
   --task_name=fashion \
   --do_predict=true \
-  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/valid \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_large/model.ckpt-41193 \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1/model.ckpt-85820 \
   --max_seq_length=16 \
-  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/fashion/test
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/fashion/valid
+
 
 python run_classifier.py \
-  --task_name=fashion \
+  --task_name=mobile \
   --do_predict=true \
-  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/fashion/test \
+  --data_dir=/home/paperspace/PsychicLearners/data/tsvs/for_inference/mobile/valid \
   --vocab_file=$BERT_BASE_DIR/vocab.txt \
   --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/fashion_exp1/model.ckpt-44626 \
+  --init_checkpoint=/home/paperspace/PsychicLearners/data/bert_checkpoints/mobile_exp2/model.ckpt-45093 \
   --max_seq_length=16 \
-  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/fashion/test
+  --output_dir=/home/paperspace/PsychicLearners/data/bert_output/mobile/valid

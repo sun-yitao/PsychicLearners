@@ -14,20 +14,14 @@ from scipy.optimize import differential_evolution
 from pathlib import Path
 
 psychic_learners_dir = Path.cwd().parent
-BIG_CATEGORY = 'fashion'
 ROOT_PROBA_FOLDER = str(psychic_learners_dir / 'data' / 'probabilities')
-TRAIN_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_train_split.csv')
-VALID_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_valid_split.csv')
-TEST_CSV = str(psychic_learners_dir / 'data' / f'{BIG_CATEGORY}_test_split.csv')
-N_CLASSES_FOR_CATEGORIES = {'beauty': 17, 'fashion': 14, 'mobile': 27}
-N_CLASSES = N_CLASSES_FOR_CATEGORIES[BIG_CATEGORY]
-BATCH_SIZE = 64
 
-def ensemble_predictions(weights):
+
+def ensemble_predictions(weights, big_category, subset='valid'):
 	# make predictions
-    out_of_fold_val_1 = np.load()
-    out_of_fold_val_2 = np.load()
-    out_of_fold_val_3 = np.load()
+    out_of_fold_val_1 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_nn', f'{subset}.npy'))
+    out_of_fold_val_2 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_xgb', f'{subset}.npy'))
+    out_of_fold_val_3 = np.load(os.path.join(ROOT_PROBA_FOLDER, big_category, 'meta', model_name + '_nn', f'{subset}.npy'))
     yhats = [out_of_fold_val_1, out_of_fold_val_2, out_of_fold_val_3]
     yhats = array(yhats)
     # weighted sum across ensemble members
@@ -37,11 +31,11 @@ def ensemble_predictions(weights):
     return result
 
 
-def evaluate_ensemble(weights, test_y):
+def evaluate_ensemble(weights, y_valid, big_category):
     # make prediction
-    yhat = ensemble_predictions(weights)
+    yhat = ensemble_predictions(weights, big_category)
     # calculate accuracy
-    return accuracy_score(test_y, yhat)
+    return accuracy_score(y_valid, yhat)
 
 # normalize a vector to have unit norm
 def normalize(weights):
@@ -54,37 +48,69 @@ def normalize(weights):
     return weights / result
 
 # loss function for optimization process, designed to be minimized
-def loss_function(weights, test_y):
+
+
+def loss_function(weights, y_valid, big_category):
     # normalize weights
     normalized = normalize(weights)
     # calculate error rate
-    return 1.0 - evaluate_ensemble(normalized, test_y)
+    return 1.0 - evaluate_ensemble(normalized, y_valid, big_category)
 
+def predict_all_to_csv(combined_model_name):
+    beauty_weights = get_weights_for_big_category('beauty')
+    beauty_predicted_test_categories = ensemble_predictions(beauty_weights, 'beauty', subset='test')
+    beauty_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'beauty_test_split.csv'))
+    beauty_preds = pd.DataFrame(data={'itemid': beauty_test['itemid'].values,
+                                      'Category': beauty_predicted_test_categories})
 
-valid_df = pd.read_csv(VALID_CSV)
-train_y = valid_df['Category'].values
-encoder = LabelEncoder()
-train_y = encoder.fit_transform(train_y)
-dummy_x = np.zeros(train_y.shape)
-X_train, X_valid, y_train, y_valid = train_test_split(dummy_x, train_y,
-                                                      stratify=train_y,
-                                                      test_size=0.25, random_state=42)
-test_y = y_train
-# fit all models
-n_members = 5
-# evaluate averaging ensemble (equal weights)
-weights = [1.0/n_members for _ in range(n_members)]
-score = evaluate_ensemble(weights, test_y)
-print('Equal Weights Score: %.3f' % score)
-# define bounds on each weight
-bound_w = [(0.0, 1.0) for _ in range(n_members)]
-# arguments to the loss function
-search_arg = (test_y)
-# global optimization of ensemble weights
-result = differential_evolution(loss_function, bound_w, search_arg, maxiter=1000, tol=1e-7)
-# get the chosen weights
-weights = normalize(result['x'])
-print('Optimized Weights: %s' % weights)
-# evaluate chosen weights
-score = evaluate_ensemble(weights, test_y)
-print('Optimized Weights Score: %.3f' % score)
+    fashion_weights = get_weights_for_big_category('fashion')
+    fashion_predicted_test_categories = ensemble_predictions(fashion_weights, 'fashion', subset='test')
+    fashion_predicted_test_categories  = fashion_predicted_test_categories + 17
+    fashion_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'fashion_test_split.csv'))
+    fashion_preds = pd.DataFrame(data={'itemid': fashion_test['itemid'].values,
+                                       'Category': fashion_predicted_test_categories})
+
+    mobile_weights = get_weights_for_big_category('mobile')
+    mobile_predicted_test_categories = ensemble_predictions(mobile_weights, 'mobile', subset='test')
+    mobile_predicted_test_categories = mobile_predicted_test_categories + 31
+    mobile_test = pd.read_csv(str(psychic_learners_dir / 'data' / 'mobile_test_split.csv'))
+    mobile_preds = pd.DataFrame(data={'itemid': mobile_test['itemid'].values,
+                                      'Category': mobile_predicted_test_categories})
+
+    all_preds = pd.concat([beauty_preds, fashion_preds, mobile_preds], ignore_index=True)
+    all_preds.to_csv(str(psychic_learners_dir / 'data' / 'predictions' /
+                         combined_model_name) + '_weighted_metameta.csv', index=False)
+    
+
+def get_weights_for_big_category(big_category):
+    VALID_CSV = str(psychic_learners_dir / 'data' / f'{big_category}_valid_split.csv')
+    valid_df = pd.read_csv(VALID_CSV)
+    train_y = valid_df['Category'].values
+    encoder = LabelEncoder()
+    train_y = encoder.fit_transform(train_y)
+    dummy_x = np.zeros(train_y.shape)
+    X_train, X_valid, y_train, y_valid = train_test_split(dummy_x, train_y,
+                                                        stratify=train_y,
+                                                        test_size=0.25, random_state=42)
+    # fit all models
+    n_members = 3
+    # evaluate averaging ensemble (equal weights)
+    weights = [1.0/n_members for _ in range(n_members)]
+    score = evaluate_ensemble(weights, y_valid, big_category)
+    print('Equal Weights Score: %.3f' % score)
+    # define bounds on each weight
+    bound_w = [(0.0, 1.0) for _ in range(n_members)]
+    # arguments to the loss function
+    search_arg = (y_valid, big_category)
+    # global optimization of ensemble weights
+    result = differential_evolution(loss_function, bound_w, search_arg, maxiter=1000, tol=1e-7)
+    # get the chosen weights
+    weights = normalize(result['x'])
+    print(f'Optimized {big_category} Weights: {weights}')
+    # evaluate chosen weights
+    score = evaluate_ensemble(weights, y_valid, big_category)
+    print(f'Optimized {big_category} Weights Score: {score}')
+    return weights
+
+if __name__ == '__main__':
+    predict_all_to_csv(combined_model_name='all_19_KNN100_rf_itemid')

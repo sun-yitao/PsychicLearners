@@ -4,9 +4,6 @@ from pathlib import Path
 import pickle
 import re
 
-import plaidml.keras
-plaidml.keras.install_backend()
-
 from PIL import Image
 import pandas as pd
 import numpy as np
@@ -178,7 +175,20 @@ def train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
              model_name='1', extract_probs=False):
 
-    
+    model = ensemble_model(dense1=dense1, dense2=dense2, n_layers=n_layers,
+                           dropout=dropout, k_reg=k_reg)
+    decay = lr_base/(epochs * lr_decay_factor)
+    sgd = keras.optimizers.SGD(
+        lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
+
+    # callbacks
+    early_stopping = keras.callbacks.EarlyStopping(monitor='val_acc', min_delta=0.00001, patience=10)
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.1, patience=5,
+                                                  verbose=1, mode='auto', min_delta=0.00001,
+                                                  cooldown=0, min_lr=0)
+    model.compile(optimizer=sgd,
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
     
     train_x = read_probabilties(proba_folder=os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
     train_y = pd.read_csv(VALID_CSV)['Category'].values
@@ -188,21 +198,6 @@ def train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001,
     encoder = OneHotEncoder(sparse=False)
     if not extract_probs:
         for train, test in kfold.split(train_x, train_y):
-            print(len(train))
-            print(len(test))
-            model = ensemble_model(dense1=dense1, dense2=dense2, n_layers=n_layers,
-                                   dropout=dropout, k_reg=k_reg)
-            decay = lr_base/(epochs * lr_decay_factor)
-            sgd = keras.optimizers.SGD(lr=lr_base, decay=decay, momentum=0.9, nesterov=True)
-            # callbacks
-            early_stopping = keras.callbacks.EarlyStopping(
-                monitor='val_acc', min_delta=0.0001, patience=7)
-            reduce_lr = keras.callbacks.ReduceLROnPlateau(monitor='val_acc', factor=0.1, patience=5,
-                                                        verbose=1, mode='auto', min_delta=0.00001,
-                                                        cooldown=0, min_lr=0)
-            model.compile(optimizer=sgd,
-                        loss='categorical_crossentropy',
-                        metrics=['accuracy'])
             y_train = encoder.fit_transform(train_y.reshape(-1, 1))
             model.fit(x=train_x[train], y=y_train[train], batch_size=BATCH_SIZE, epochs=1000, verbose=2, 
                     callbacks=[early_stopping, reduce_lr], validation_data=(train_x[test], y_train[test]),
@@ -383,15 +378,17 @@ def train_adaboost_extra_trees(model_name, extract_probs=False, save_model=False
     train_y = encoder.fit_transform(train_y)
     if param_dict:
         print(param_dict)
-        classifier = xgboost.XGBClassifier(**param_dict)
+        raise NotImplementedError()
     else:
-        base_estim = ensemble.ExtraTreesClassifier(n_estimators='warn', criterion='gini',
-                                                   max_depth=None, min_samples_split=2, min_samples_leaf=1,
-                                                   min_weight_fraction_leaf=0.0, max_features='auto', max_leaf_nodes=None,
-                                                   min_impurity_decrease=0.0, min_impurity_split=None, bootstrap=False,
-                                                   oob_score=False, n_jobs=None, random_state=None, verbose=0,
-                                                   warm_start=False, class_weight=None)
-        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=50, learning_rate=1.0, 
+        param_grid = {
+            #'n_estimators': range(50,126,25),
+            #'max_features': range(50, 401, 50),
+            #'min_samples_leaf': range(20,50,5),
+            #'min_samples_split': range(15,36,5),
+        }
+        base_estim = ensemble.ExtraTreesClassifier(n_estimators=80, criterion='gini', max_depth=None, min_samples_split=10,  # 80.8347
+                                                   min_samples_leaf=1, max_features='auto',)
+        classifier = ensemble.AdaBoostClassifier(base_estimator=base_estim, n_estimators=60, learning_rate=1.0, 
                                                  algorithm='SAMME.R')
     if stratified:
         kfold = StratifiedKFold(n_splits=4, random_state=7, shuffle=True)
@@ -494,59 +491,6 @@ def train_xgb(model_name, extract_probs=False, save_model=False, stratified=Fals
         os.makedirs(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name + '_xgb'), exist_ok=True)
         np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY, 'meta', model_name + '_xgb', 'valid.npy'), val_preds)
         np.save(os.path.join(ROOT_PROBA_FOLDER, BIG_CATEGORY,  'meta', model_name + '_xgb', 'test.npy'), test_preds)
-
-
-def bayes_search_xgb(param_dict):
-    train_probs = read_probabilties(proba_folder=os.path.join(
-        ROOT_PROBA_FOLDER, BIG_CATEGORY), subset='valid')
-    valid_df = pd.read_csv(VALID_CSV)
-    train_y = valid_df['Category'].values
-    encoder = LabelEncoder()
-    train_y = encoder.fit_transform(train_y)
-
-    bayes_cv_tuner = BayesSearchCV(
-        estimator=xgboost.XGBClassifier(**param_dict),
-        search_spaces={
-            'learning_rate': (0.01, 1.0, 'log-uniform'),
-            'min_child_weight': (0, 4),
-            'max_depth': (6, 9),
-            'max_delta_step': (0, 20),
-            'subsample': (0.7, 1.0, 'uniform'),
-            'colsample_bytree': (0.7, 1.0, 'uniform'),
-            'colsample_bylevel': (0.7, 1.0, 'uniform'),
-            'reg_lambda': (1e-9, 1000, 'log-uniform'),
-            'reg_alpha': (1e-9, 1.0, 'log-uniform'),
-            'gamma': (1e-9, 0.5, 'log-uniform'),
-            'n_estimators': (50, 300),
-            'scale_pos_weight': (1e-6, 500, 'log-uniform')
-        },
-        cv=StratifiedKFold(n_splits=4, random_state=7, shuffle=True),
-        scoring='accuracy',
-        n_jobs=-1,
-        n_iter=100,
-        verbose=1,
-        refit=True,
-        random_state=7
-    )
-
-    def status_print(optim_result):
-        """Status callback durring bayesian hyperparameter search"""
-
-        # Get all the models tested so far in DataFrame format
-        all_models = pd.DataFrame(bayes_cv_tuner.cv_results_)
-
-        # Get current parameters and the best parameters
-        best_params = pd.Series(bayes_cv_tuner.best_params_)
-        print('Model #{}\nBest Accuracy: {}\nBest params: {}\n'.format(
-            len(all_models),
-            np.round(bayes_cv_tuner.best_score_, 4),
-            bayes_cv_tuner.best_params_
-        ))
-
-        # Save all model results
-        clf_name = bayes_cv_tuner.estimator.__class__.__name__
-        all_models.to_csv(clf_name+"_cv_results.csv")
-    result = bayes_cv_tuner.fit(train_probs, train_y, callback=status_print)
 
 def predict_keras(model_path, big_category, model_names=model_names):
     test_x = read_probabilties(proba_folder=os.path.join(
@@ -750,9 +694,10 @@ def check_output():
 
 if __name__ == '__main__':
     COMBINED_MODEL_NAME = 'all_19_KNN200_rf_itemid'
-    train_nn(dense1=200, dense2=32, n_layers=5, dropout=0.2, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
+    """
+    train_nn(dense1=150, dense2=32, n_layers=4, dropout=0.0, k_reg=0.00000001, lr_base=0.01, epochs=50, lr_decay_factor=1,
              checkpoint_dir=str(psychic_learners_dir / 'data' / 'keras_checkpoints' / BIG_CATEGORY / 'combined_nn'),
-             model_name=COMBINED_MODEL_NAME, extract_probs=False)
+             model_name=COMBINED_MODEL_NAME, extract_probs=False)"""
     #change_wrong_category()
     #predict_all_nn()
     #check_output()
@@ -761,7 +706,7 @@ if __name__ == '__main__':
     param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs':-1,
      'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
     train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)"""
-    
+    train_adaboost_extra_trees(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
@@ -778,83 +723,14 @@ if __name__ == '__main__':
     #check_output()
 
 """
-Logs
-OVERALL
-4+charcnn 0.7629462331932415
-5+wordrnn 0.7628749750297908
-7+bert 0.7692680688489952
-8+atten_bilstm 0.7690330277591126
-all_13_xgb 0.7727376190442597
-13+itemid_index_nofashion 0.790656 total, 0.78882 PL
-17_with_itemid fashion_KNN 400 0.79851 PL 
-17_with_itemid + knn40_tfidf + rf_itemid with fashion KNNitemid 100 = 
-
-XGB
+ADABOOST
 # beauty
-## 150 estimators
-13 + KNN = 82.3857
-13 + tfidf_logreg + KNN_itemid  = 82.4799
-13 + tfidf_logreg + KNN_itemid + capsulenet = 82.3892
-13 + tfidf_logreg + KNN_itemid + rf  = 82.3874
-13 + tfidf_logreg + KNN_itemid + rf_tfidf = 82.4154
-17_with_itemid + knn40_tfidf + rf_itemid = 82.6248
 
-## 50 estimators
-13 + tfidf_logreg + KNN_itemid = 82.2269
-13 + tfidf_logreg + KNN_itemid = 82.2863 max depth 6 
-13 + tfidf_logreg + KNN_itemid + knn5_tfidf = 82.3124
-13 + tfidf_logreg + KNN_itemid - adv + capsulenet = 82.1920
-{'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 
-'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0}
-17_with_itemid = 82.3787% LAST PL
-17_with_itemid + knn20_tfidf = 82.3369
-17_with_itemid + knn40_tfidf = 82.3892
-17_with_itemid + knn40_tfidf + rf_itemid = 82.5497
-17_with_itemid + knn40_tfidf + rf_itemid + bert_large = 82.5497
-17_with_itemid + knn40_tfidf + rf_itemid + knn80_tfidf = 82.4835
-
-## bayesian optimised
-17_with_itemid + knn40_tfidf + rf_itemid = 82.67
-
-
-# fashion
-# 150 estimators
-13 + tfidf logreg = 68.51
-13 + tfidf_logreg + KNN_itemid  = 76.3707% Does not correlate with LB, K neighbours set too low
-17_with_itemid + knn40_tfidf KNNitemid 100 = 74.1017
-
-## 50 estimators
-17_with_itemid KNN 400 = 71.7963
-17_with_itemid + knn40_tfidf KNNitemid 200 = 72.5655
-17_with_itemid + knn40_tfidf KNNitemid 150 = 72.9684
-17_with_itemid + knn40_tfidf KNNitemid 100 = 73.7968
-17_with_itemid + knn40_tfidf with KNNitemid 100 = 75.3079
-
-## bayesian optimised
-17_with_itemid + knn40_tfidf with KNNitemid 100 = 74.05
-
-
-# mobile
-## 150 estimators
-17_with_itemid + knn40_tfidf + rf_itemid = 87.5974
-
-## bayesian optimised 
-17_with_itemid + knn40_tfidf + rf_itemid = 87.68
-
-"""
-"""
-NN
-# beauty
-dense1=150, dense2=32, n_layers=4, dropout=0.0, k_reg=0.00000001 = 81.3442%
-dense1=150, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9706
-dense1=200, dense2=32, n_layers=4, dropout=0.2, k_reg=0.00000001 = 81.9879
-dense1=200, dense2=48, n_layers=4, dropout=0.2, k_reg=0.00000001 = 82.0821
 
 # fashion
 
 
 #mobile
-
 
 
 """
