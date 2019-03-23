@@ -54,6 +54,10 @@ model_names = [
     'knn10_tfidf',
     'knn40_tfidf',
     'rf_itemid',  # non-fashion
+    #'bert_large',
+    #'knn80_tfidf',
+    #'knn160_tfidf',
+    #'nb_extractions',
 ]
 
 unwanted_models = [
@@ -418,7 +422,7 @@ def bayes_search_xgb(param_dict):
 
         # Get current parameters and the best parameters
         best_params = pd.Series(bayes_cv_tuner.best_params_)
-        print('Model #{}\nBest ROC-AUC: {}\nBest params: {}\n'.format(
+        print('Model #{}\nBest Accuracy: {}\nBest params: {}\n'.format(
             len(all_models),
             np.round(bayes_cv_tuner.best_score_, 4),
             bayes_cv_tuner.best_params_
@@ -620,10 +624,10 @@ if __name__ == '__main__':
     #check_output()
     #train_xgb(COMBINED_MODEL_NAME, extract_probs=True, save_model=True, stratified=False)
     
-    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 150, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'objective':'multi:softmax',
+    param_dict = {'max_depth': 7, 'learning_rate': 0.05, 'n_estimators': 50, 'gamma': 0, 'min_child_weight': 2, 'max_delta_step': 0, 'subsample': 1.0, 'n_jobs': -1, 'objective':'multi:softmax',
                   'colsample_bytree': 1.0, 'colsample_bylevel': 1, 'reg_alpha': 0.01, 'reg_lambda': 1, 'scale_pos_weight': 1, 'base_score': 0.5, 'random_state': 0, 'tree_method':'gpu_hist'}
-    #train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=True, stratified=False, param_dict=param_dict)
-    bayes_search_xgb(param_dict)
+    train_xgb(COMBINED_MODEL_NAME, extract_probs=False, save_model=False, stratified=True, param_dict=param_dict)
+    #bayes_search_xgb(param_dict)
 
     
     #train_catboost(COMBINED_MODEL_NAME, save_model=False)
