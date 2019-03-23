@@ -8,7 +8,7 @@ Our algorithm consists of 19 of level 1 algorithms and 3 level 2 algorithms trai
 
 #### Level 1 algorithms:
 
-From [https://github.com/TobiasLee/Text-Classification]
+From https://github.com/TobiasLee/Text-Classification
 
 1. Adversarial Training Methods for Semi-Supervised Text Classification [https://arxiv.org/abs/1605.07725]
 2. Attention-Based Bidirectional Long Short-Term Memory Networks [http://www.aclweb.org/anthology/P16-2034]
@@ -17,7 +17,7 @@ From [https://github.com/TobiasLee/Text-Classification]
 
 
 
-From [https://github.com/dongjun-Lee/text-classification-models-tf]
+From https://github.com/dongjun-Lee/text-classification-models-tf
 
 5. Word-level CNN [https://arxiv.org/abs/1408.5882]
 6. Character-level CNN [https://arxiv.org/abs/1509.01626]
@@ -78,7 +78,7 @@ For the rest of the cleaning and translating functions, we found that they did n
 
 
 
-### For the models under [https://github.com/TobiasLee/Text-Classification]:
+### For the models under https://github.com/TobiasLee/Text-Classification :
 
 Modify the script under 
 
@@ -101,7 +101,7 @@ python adversarial_abblstm.py #change with any model
 
 
 
-### For the models under [https://github.com/dongjun-Lee/text-classification-models-tf]:
+### For the models under https://github.com/dongjun-Lee/text-classification-models-tf :
 
 1) Modify the csv and titles.txt path in data_utils.py (titles.txt consists of all the titles in the dataset separated by newline)
 
@@ -116,8 +116,6 @@ python train-py --model=word_cnn #we used word_cnn, char_cnn, word_rnn and rcnn
 ### For Fasttext:
 
 First use the title_classification/csv_to_txt_fasttext.py to convert csv to fasttext format, change the big_category in the script.
-
-The best params we found can be found in generate_predictions.py in the root folder
 
 
 
