@@ -426,7 +426,7 @@ def bayes_search_xgb(param_dict):
         # Save all model results
         clf_name = bayes_cv_tuner.estimator.__class__.__name__
         all_models.to_csv(clf_name+"_cv_results.csv")
-        result = bayes_cv_tuner.fit(train_probs, train_y, callback=status_print)
+    result = bayes_cv_tuner.fit(train_probs, train_y, callback=status_print)
 
 def train_xgb(model_name, extract_probs=False, save_model=False, stratified=False, param_dict=None):
     if stratified and save_model:
