@@ -38,7 +38,7 @@ Others:
 16. Fasttext on titles [https://arxiv.org/abs/1607.01759], this is one of our strongest individual performers, netting us with 75% accuracy on its own.
 17. Fasttext on extracted text from images with pytesseract [https://github.com/madmaze/pytesseract]
 18. BERT base multi-language uncased fine-tuning on titles [https://github.com/google-research/bert]
-19. Image classification: We use a SEResNext50 [https://arxiv.org/abs/1709.01507] for fashion images and a pre-trained Inception Resnet V2 [https://arxiv.org/abs/1602.07261] for mobile and beauty images, with random erasing augmentation [https://arxiv.org/abs/1708.04896v2]. We did not have time to test out different models due to the large quatity of data so we just went with what seemed to perform well in the first few epochs. We also resized images to 240x240 to speed up training and used class weights to balance the class imbalance Training was conducted on a P6000 and 2 Tesla T4 GPUs. Image classification had a roughly 10% lower accuracy compared to text classification and we were not able to improve it by much due to time constraints.
+19. Image classification: We use a SEResNext50 [https://arxiv.org/abs/1709.01507] for fashion images and a pre-trained Inception Resnet V2 [https://arxiv.org/abs/1602.07261] for mobile and beauty images, with random erasing augmentation [https://arxiv.org/abs/1708.04896v2]. We did not have time to test out different models due to the large quantity of data so we just went with what seemed to perform well in the first few epochs. We also resized images to 240x240 to speed up training and used class weights to balance the class imbalance. Training was conducted on a P6000 and 2 Tesla T4 GPUs. Image classification had a roughly 10% lower accuracy compared to text classification and we were not able to improve it by much due to time constraints.
 
 ## Steps to reproduce meta model results:
 
@@ -52,13 +52,6 @@ Download models and predicted probabilties from google drive
 Put them in PsychicLearners/data/probabilities and PsychicLearners/data/keras_checkpoints (keras checkpoints is misnamed, it actually just refers to all checkpoints keras or non-keras)
 
 For training use the train_nn, train_xgb and train_adaboost_extra_trees functions. To run the final layer run meta_meta.py
-
-```
-cd ensemble
-python stack_ensemble.py
-```
-
-
 
 ## Steps to reproduce level 1 models
 
