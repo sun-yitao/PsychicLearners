@@ -1,10 +1,10 @@
 # PsychicLearners
 
-NDSC 2019
+2nd place solution for National Data Science Challenge 2019
 
 ## Overview
 
-Our algorithm consists of 19 of level 1 algorithms and 3 level 2 algorithms trained on the predicted probabilities of the level 1 algorithms. Finally we do a weighted average of the level 2 output probabilities with the weights optimised by differential evolution.  Due to a lack of time, we were unable to do cross-validation on many of the more computationally expensive algorithms and a proper parameter search on the best configuration of the level 1 algorithms that leads to the best accuracy of the ensemble as a whole. We also apologise for the poor code quality as it was written in a hurry.
+Our algorithm consists of 19 of level 1 algorithms and 3 level 2 algorithms trained on the predicted probabilities of the level 1 algorithms. Finally we do a weighted average of the level 2 output probabilities with the weights optimised by differential evolution.  Due to a lack of time, we were unable to do cross-validation on many of the more computationally expensive algorithms and a proper parameter search on the best configuration of the level 1 algorithms that leads to the best accuracy of the ensemble as a whole. We also apologise for the poor code quality as it was written in a hurry. A more detailed writeup can be found here: https://www.kaggle.com/c/ndsc-beginner/discussion/85396
 
 #### Level 1 algorithms:
 
